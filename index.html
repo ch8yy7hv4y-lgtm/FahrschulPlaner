@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fahrschule – Buchung</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.29.0/dist/tabler-icons.min.css">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:       #F0F2F7;
+  --surface:  #FFFFFF;
+  --border:   #E2E8F0;
+  --border2:  #C8D0DC;
+  --text:     #1A2332;
+  --muted:    #64748B;
+  --hint:     #94A3B8;
+  --navy:     #0D1B2A;
+  --amber:    #F59E0B;
+  --amber-bg: #FEF3C7;
+  --amber-tx: #92400E;
+  --green:    #10B981;
+  --green-bg: #D1FAE5;
+  --green-tx: #065F46;
+  --red:      #EF4444;
+  --red-bg:   #FEE2E2;
+  --red-tx:   #991B1B;
+  --blue:     #3B82F6;
+  --r:        8px;
+  --rl:       14px;
+}
+body { font-family: system-ui,-apple-system,sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+/* ── Header ── */
+.hdr { background: var(--navy); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 9px; }
+.brand-icon { width: 34px; height: 34px; background: var(--amber); border-radius: var(--r); display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
+.brand-name { font-size: 15px; font-weight: 700; color: #fff; }
+.brand-sub  { font-size: 10px; color: rgba(255,255,255,.45); }
+.hdr-right  { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.toggle-group { display: flex; background: rgba(255,255,255,.1); border-radius: var(--r); padding: 3px; gap: 3px; }
+.toggle-btn { padding: 6px 13px; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; background: transparent; color: rgba(255,255,255,.6); display: flex; align-items: center; gap: 5px; touch-action: manipulation; }
+.toggle-btn.active { background: var(--amber); color: var(--navy); }
+.auth-btn { padding: 7px 12px; border: 1px solid rgba(255,255,255,.22); border-radius: var(--r); background: transparent; color: rgba(255,255,255,.75); font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; white-space: nowrap; touch-action: manipulation; }
+
+/* ── Info bar ── */
+.infobar { background: #0F2035; padding: 7px 16px; font-size: 12px; color: rgba(255,255,255,.5); display: flex; align-items: center; gap: 7px; }
+.infobar.lehrer { color: var(--amber); }
+
+/* ── Week nav ── */
+.weeknav { padding: 14px 16px 8px; display: flex; align-items: center; gap: 10px; }
+.weeknav button { padding: 7px 12px; border: 1px solid var(--border); border-radius: var(--r); background: var(--surface); font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; color: var(--text); touch-action: manipulation; white-space: nowrap; }
+.weeknav button:active { background: var(--bg); }
+.week-label { flex: 1; text-align: center; font-size: 13px; font-weight: 700; }
+
+/* ── Calendar ── */
+.cal-outer { padding: 0 16px 16px; overflow-x: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
+.cal { display: grid; grid-template-columns: 44px repeat(6, minmax(52px, 1fr)); gap: 3px; min-width: 380px; }
+.cal-hdr { text-align: center; padding: 4px 1px 8px; }
+.day-ab { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--hint); }
+.day-ab.today { color: var(--blue); }
+.day-num { font-size: 16px; font-weight: 800; color: var(--text); line-height: 1.2; }
+.day-num.today { color: var(--blue); }
+.time-lbl { font-size: 9px; color: var(--hint); text-align: right; padding-right: 5px; padding-top: 14px; font-weight: 600; }
+.slot {
+  border-radius: var(--r); min-height: 46px; display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border); background: var(--surface); user-select: none;
+  touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+  transition: opacity .1s, transform .08s;
+}
+.slot.clickable { cursor: pointer; }
+.slot.clickable:active { opacity: .7; transform: scale(.96); }
+@media (hover: hover) { .slot.clickable:hover { opacity: .78; transform: scale(.98); } }
+.slot.free-s { background: var(--green-bg); border-color: var(--green); }
+.slot.free-l { background: var(--surface); border-color: var(--border); }
+.slot.blocked { background: var(--red-bg); border-color: var(--red); }
+.slot.booked  { background: var(--amber-bg); border-color: var(--amber); }
+.slot.optimistic { opacity: .6; }
+.slot-txt { font-size: 10px; font-weight: 700; text-align: center; padding: 0 3px; line-height: 1.3; }
+.free-s .slot-txt  { color: var(--green-tx); }
+.free-l .slot-txt  { color: var(--hint); }
+.blocked .slot-txt { color: var(--red-tx); }
+.booked  .slot-txt { color: var(--amber-tx); }
+
+/* ── Legend ── */
+.legend { padding: 0 16px 14px; display: flex; gap: 14px; flex-wrap: wrap; }
+.leg { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
+.leg-dot { width: 11px; height: 11px; border-radius: 3px; border: 1.5px solid; flex-shrink: 0; }
+
+/* ── Stats ── */
+.stats { padding: 12px 16px 24px; display: flex; gap: 8px; border-top: 1px solid var(--border); }
+.stat { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 10px 8px; text-align: center; }
+.stat-lbl { font-size: 10px; color: var(--muted); margin-bottom: 3px; }
+.stat-val { font-size: 20px; font-weight: 800; }
+
+/* ── Toast ── */
+.toast-wrap { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 7px; z-index: 999; width: calc(100% - 32px); max-width: 340px; pointer-events: none; }
+.toast { background: var(--navy); color: #fff; padding: 10px 14px; border-radius: var(--r); font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; animation: slideUp .22s ease; box-shadow: 0 4px 16px rgba(0,0,0,.2); }
+.toast.ok  { background: #059669; }
+.toast.err { background: var(--red); }
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* ── Overlay ── */
+.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 100; align-items: flex-end; padding: 0; }
+.overlay.open { display: flex; }
+@media (min-width: 540px) { .overlay { align-items: center; padding: 16px; } .modal { border-radius: var(--rl) !important; max-width: 360px !important; } }
+
+/* ── Modal (bottom sheet on mobile) ── */
+.modal {
+  background: var(--surface); border-radius: var(--rl) var(--rl) 0 0;
+  padding: 20px 20px 32px; width: 100%; max-width: 100%;
+  animation: sheetUp .22s ease;
+}
+@keyframes sheetUp { from { transform: translateY(40px); opacity: .6; } to { transform: translateY(0); opacity: 1; } }
+.modal-handle { width: 36px; height: 4px; background: var(--border2); border-radius: 2px; margin: 0 auto 16px; }
+.modal h2 { font-size: 17px; font-weight: 800; margin-bottom: 3px; }
+.modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+.form-lbl { font-size: 12px; font-weight: 700; color: var(--muted); display: block; margin-bottom: 5px; }
+.form-inp { width: 100%; padding: 11px 12px; border: 1.5px solid var(--border); border-radius: var(--r); font-size: 16px; outline: none; background: var(--surface); color: var(--text); -webkit-appearance: none; }
+.form-inp:focus { border-color: var(--blue); }
+.form-group { margin-bottom: 12px; }
+.btn-row { display: flex; gap: 8px; margin-top: 18px; }
+.btn { flex: 1; padding: 12px 10px; border-radius: var(--r); border: 1.5px solid var(--border); background: transparent; font-size: 15px; font-weight: 700; cursor: pointer; color: var(--text); touch-action: manipulation; }
+.btn:active { opacity: .7; }
+.btn.primary { background: var(--amber); border-color: var(--amber); color: var(--navy); flex: 2; }
+.btn.danger  { background: var(--red-bg); border-color: var(--red); color: var(--red-tx); }
+
+/* ── Spinner ── */
+.spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin .65s linear infinite; vertical-align: middle; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.load-row { grid-column: 1/-1; text-align: center; padding: 40px; color: var(--hint); }
+
+/* ── Safe area for iPhone ── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .modal { padding-bottom: max(32px, env(safe-area-inset-bottom)); }
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="hdr">
+  <div class="brand">
+    <div class="brand-icon">🚗</div>
+    <div>
+      <div class="brand-name">Fahrschule Müller</div>
+      <div class="brand-sub">Online-Buchung</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <div class="toggle-group">
+      <button class="toggle-btn" id="btn-l" onclick="setView('lehrer')"><i class="ti ti-chalkboard"></i> Lehrer</button>
+      <button class="toggle-btn active" id="btn-s" onclick="setView('schueler')"><i class="ti ti-user"></i> Schüler</button>
+    </div>
+    <button class="auth-btn" id="auth-btn" onclick="handleAuth()">
+      <i class="ti ti-lock" id="auth-icon"></i><span id="auth-txt">Login</span>
+    </button>
+  </div>
+</div>
+
+<!-- Info bar -->
+<div class="infobar" id="infobar">
+  <i class="ti ti-info-circle"></i>
+  <span id="info-txt">Grünen Slot antippen um eine Fahrstunde zu buchen.</span>
+</div>
+
+<!-- Week nav -->
+<div class="weeknav">
+  <button onclick="shiftWeek(-7)"><i class="ti ti-arrow-left"></i></button>
+  <div class="week-label" id="wlbl">Lädt…</div>
+  <button onclick="shiftWeek(7)"><i class="ti ti-arrow-right"></i></button>
+</div>
+
+<!-- Calendar -->
+<div class="cal-outer"><div class="cal" id="cal"></div></div>
+
+<!-- Legend -->
+<div class="legend" id="legend"></div>
+
+<!-- Stats -->
+<div class="stats">
+  <div class="stat"><div class="stat-lbl">Verfügbar</div><div class="stat-val" id="sv" style="color:var(--green)">–</div></div>
+  <div class="stat"><div class="stat-lbl">Gebucht</div><div class="stat-val" id="sb" style="color:var(--amber)">–</div></div>
+  <div class="stat"><div class="stat-lbl">Gesperrt</div><div class="stat-val" id="sg" style="color:var(--red)">–</div></div>
+</div>
+
+<!-- Toasts -->
+<div class="toast-wrap" id="toasts"></div>
+
+<!-- Login Modal -->
+<div class="overlay" id="login-ov">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>Fahrlehrer-Login</h2>
+    <div class="modal-sub">Nur für den Fahrlehrer – Schüler brauchen kein Konto.</div>
+    <div class="form-group"><label class="form-lbl">E-Mail</label><input class="form-inp" type="email" id="l-email" placeholder="lehrer@fahrschule.de" autocomplete="email"></div>
+    <div class="form-group"><label class="form-lbl">Passwort</label><input class="form-inp" type="password" id="l-pw" placeholder="••••••••" autocomplete="current-password"></div>
+    <div class="btn-row">
+      <button class="btn" onclick="closeOv('login-ov')">Abbrechen</button>
+      <button class="btn primary" id="login-btn" onclick="doLogin()"><span id="login-txt">Einloggen</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- Booking Modal -->
+<div class="overlay" id="book-ov">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>Fahrstunde buchen</h2>
+    <div class="modal-sub" id="book-date">–</div>
+    <div class="form-group"><label class="form-lbl">Dein Name *</label><input class="form-inp" type="text" id="b-name" placeholder="Max Mustermann" autocomplete="name"></div>
+    <div class="form-group"><label class="form-lbl">E-Mail (optional)</label><input class="form-inp" type="email" id="b-email" placeholder="max@beispiel.de" autocomplete="email"></div>
+    <div class="form-group"><label class="form-lbl">Telefon (optional)</label><input class="form-inp" type="tel" id="b-phone" placeholder="0151 123 456" autocomplete="tel"></div>
+    <div class="btn-row">
+      <button class="btn" onclick="closeOv('book-ov')">Abbrechen</button>
+      <button class="btn primary" id="book-btn" onclick="doBook()"><span id="book-txt">Jetzt buchen →</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- Cancel Modal -->
+<div class="overlay" id="cancel-ov">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>Buchung verwalten</h2>
+    <div class="modal-sub" id="cancel-info">–</div>
+    <div class="btn-row">
+      <button class="btn" onclick="closeOv('cancel-ov')">Schließen</button>
+      <button class="btn danger" id="cancel-btn" onclick="doCancel()"><i class="ti ti-trash"></i> Stornieren</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://osncfjvikzjspaqdnpkj.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_Q9HLO697RRHbL2RdQwwqKw_uKcNtRm5';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const TIMES    = ['07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00'];
+const DAY_AB   = ['Mo','Di','Mi','Do','Fr','Sa'];
+const DAY_FULL = ['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+
+let view        = 'schueler';
+let weekStart   = getMonday(new Date());
+let user        = null;
+let slots       = {};          // key → {status, student_name, _pending}
+let pendingBook = null;
+let pendingCxl  = null;
+let loadingFull = false;
+let ownChange   = false;       // flag: skip realtime reload for our own writes
+
+// ─── Helpers ───────────────────────────────────────────────
+function getMonday(d){ const r=new Date(d),d2=r.getDay(); r.setDate(r.getDate()-d2+(d2===0?-6:1)); r.setHours(0,0,0,0); return r; }
+function addDays(d,n){ const r=new Date(d); r.setDate(r.getDate()+n); return r; }
+function fmtISO(d){ return d.toISOString().split('T')[0]; }
+function fmtDE(d){ return d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'}); }
+function getKW(d){ const u=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())),dn=u.getUTCDay()||7; u.setUTCDate(u.getUTCDate()+4-dn); return Math.ceil((((u-new Date(Date.UTC(u.getUTCFullYear(),0,1)))/86400000)+1)/7); }
+function sk(date,time){ return date+'|'+time; }
+
+function toast(msg, type=''){
+  const w=document.getElementById('toasts'), t=document.createElement('div');
+  t.className='toast '+type;
+  t.innerHTML=`<i class="ti ti-${type==='ok'?'check':'alert-circle'}"></i> ${msg}`;
+  w.appendChild(t); setTimeout(()=>t.remove(), 3200);
+}
+function openOv(id){ document.getElementById(id).classList.add('open'); }
+function closeOv(id){ document.getElementById(id).classList.remove('open'); }
+
+// ─── Auth ───────────────────────────────────────────────────
+async function initAuth(){
+  const {data} = await db.auth.getSession();
+  user = data?.session?.user ?? null;
+  updateAuthUI();
+}
+function updateAuthUI(){
+  document.getElementById('auth-icon').className = user ? 'ti ti-logout' : 'ti ti-lock';
+  document.getElementById('auth-txt').textContent  = user ? 'Abmelden' : 'Login';
+}
+function handleAuth(){ user ? doLogout() : openOv('login-ov'); }
+
+async function doLogin(){
+  const email=document.getElementById('l-email').value.trim();
+  const pw=document.getElementById('l-pw').value;
+  if(!email||!pw){ toast('Bitte E-Mail und Passwort eingeben.','err'); return; }
+  const btn=document.getElementById('login-btn');
+  btn.innerHTML='<span class="spinner"></span>'; btn.disabled=true;
+  const {data,error} = await db.auth.signInWithPassword({email,password:pw});
+  btn.innerHTML='<span id="login-txt">Einloggen</span>'; btn.disabled=false;
+  if(error){ toast('Login fehlgeschlagen.','err'); return; }
+  user=data.user; updateAuthUI(); closeOv('login-ov'); setView('lehrer');
+  toast('Willkommen, Fahrlehrer! 👋','ok');
+}
+async function doLogout(){ await db.auth.signOut(); user=null; updateAuthUI(); setView('schueler'); toast('Abgemeldet.'); }
+document.getElementById('l-pw').addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin(); });
+
+// ─── Data loading (full) ─────────────────────────────────────
+async function loadSlots(){
+  loadingFull=true; renderCal();
+  const ws=fmtISO(weekStart);
+  const {data,error} = await db.rpc('get_week_status',{week_start:ws});
+  loadingFull=false;
+  if(error){ toast('Ladefehler: '+error.message,'err'); renderCal(); return; }
+  slots={};
+  (data||[]).forEach(r=>{
+    const time=r.slot_time.substring(0,5);
+    slots[sk(r.slot_date,time)]={status:r.status, student_name:r.student_name};
+  });
+  renderCal();
+}
+
+// ─── View toggle ─────────────────────────────────────────────
+function setView(v){
+  view=v;
+  document.getElementById('btn-l').classList.toggle('active',v==='lehrer');
+  document.getElementById('btn-s').classList.toggle('active',v==='schueler');
+  const bar=document.getElementById('infobar'), txt=document.getElementById('info-txt');
+  if(v==='lehrer'){
+    bar.className='infobar lehrer';
+    txt.textContent=user
+      ? 'Freien Slot antippen zum Sperren – gesperrten Slot nochmal zum Freigeben.'
+      : 'Melde dich an um Slots zu verwalten.';
+  } else {
+    bar.className='infobar';
+    txt.textContent='Grünen Slot antippen um eine Fahrstunde zu buchen.';
+  }
+  renderCal();
+}
+
+// ─── Render ──────────────────────────────────────────────────
+function renderCal(){
+  const today=fmtISO(new Date());
+  const days=Array.from({length:6},(_,i)=>addDays(weekStart,i));
+  document.getElementById('wlbl').textContent=
+    `KW ${getKW(weekStart)} · ${fmtDE(weekStart)}–${fmtDE(addDays(weekStart,5))}`;
+  const cal=document.getElementById('cal'); cal.innerHTML='';
+
+  if(loadingFull){
+    cal.innerHTML='<div class="load-row"><i class="ti ti-loader" style="font-size:22px;color:var(--hint);animation:spin .65s linear infinite"></i></div>';
+    return;
+  }
+
+  cal.appendChild(document.createElement('div'));
+  days.forEach((d,i)=>{
+    const isT=fmtISO(d)===today, h=document.createElement('div');
+    h.className='cal-hdr';
+    h.innerHTML=`<div class="day-ab${isT?' today':''}">${DAY_AB[i]}</div><div class="day-num${isT?' today':''}">${d.getDate()}</div>`;
+    cal.appendChild(h);
+  });
+
+  let cf=0,cb=0,cg=0;
+  TIMES.forEach(time=>{
+    const tl=document.createElement('div'); tl.className='time-lbl'; tl.textContent=time; cal.appendChild(tl);
+    days.forEach(d=>{
+      const key=sk(fmtISO(d),time), info=slots[key]||{status:'free'};
+      const el=document.createElement('div'); el.className='slot';
+      if(info._pending) el.classList.add('optimistic');
+      let txt='';
+      if(info.status==='blocked'){
+        el.classList.add('blocked'); txt=view==='lehrer'?'Gesperrt':'×'; cg++;
+        if(view==='lehrer'&&user){ el.classList.add('clickable'); el.onclick=()=>onSlot(fmtISO(d),time,info); }
+      } else if(info.status==='booked'){
+        el.classList.add('booked'); txt=view==='lehrer'?(info.student_name||'Gebucht'):'Gebucht'; cb++;
+        if(view==='lehrer'&&user){ el.classList.add('clickable'); el.onclick=()=>onSlot(fmtISO(d),time,info); }
+      } else {
+        el.classList.add(view==='schueler'?'free-s':'free-l'); txt=view==='schueler'?'Buchen':''; cf++;
+        el.classList.add('clickable'); el.onclick=()=>onSlot(fmtISO(d),time,info);
+      }
+      const sp=document.createElement('span'); sp.className='slot-txt'; sp.textContent=txt;
+      el.appendChild(sp); cal.appendChild(el);
+    });
+  });
+
+  document.getElementById('sv').textContent=cf;
+  document.getElementById('sb').textContent=cb;
+  document.getElementById('sg').textContent=cg;
+  renderLegend();
+}
+
+function renderLegend(){
+  const items=view==='lehrer'
+    ?[{bg:'var(--surface)',bc:'var(--border)',l:'Verfügbar'},{bg:'var(--amber-bg)',bc:'var(--amber)',l:'Gebucht'},{bg:'var(--red-bg)',bc:'var(--red)',l:'Gesperrt'}]
+    :[{bg:'var(--green-bg)',bc:'var(--green)',l:'Buchbar'},{bg:'var(--amber-bg)',bc:'var(--amber)',l:'Gebucht'},{bg:'var(--red-bg)',bc:'var(--red)',l:'Nicht verfügbar'}];
+  document.getElementById('legend').innerHTML=items.map(({bg,bc,l})=>
+    `<div class="leg"><div class="leg-dot" style="background:${bg};border-color:${bc}"></div><span>${l}</span></div>`).join('');
+}
+
+// ─── Slot click ──────────────────────────────────────────────
+function onSlot(dateStr, time, info){
+  if(view==='schueler'){
+    if(info.status!=='free') return;
+    const d=new Date(dateStr+'T00:00:00'), di=(d.getDay()||7)-1;
+    document.getElementById('book-date').textContent=`${DAY_FULL[di]}, ${fmtDE(d)} um ${time} Uhr`;
+    document.getElementById('b-name').value='';
+    document.getElementById('b-email').value='';
+    document.getElementById('b-phone').value='';
+    pendingBook={date:dateStr,time};
+    openOv('book-ov');
+    setTimeout(()=>document.getElementById('b-name').focus(),80);
+  } else if(view==='lehrer'&&user){
+    if(info.status==='booked'){
+      const d=new Date(dateStr+'T00:00:00'), di=(d.getDay()||7)-1;
+      document.getElementById('cancel-info').textContent=
+        `${DAY_FULL[di]}, ${fmtDE(d)} um ${time} Uhr – Schüler: ${info.student_name||'?'}`;
+      pendingCxl={date:dateStr,time};
+      openOv('cancel-ov');
+    } else if(info.status==='blocked'){
+      doUnblock(dateStr,time);
+    } else {
+      doBlock(dateStr,time);
+    }
+  }
+}
+
+// ─── Block (optimistic) ──────────────────────────────────────
+async function doBlock(date,time){
+  const key=sk(date,time);
+  // Optimistic: update local state instantly
+  slots[key]={status:'blocked', _pending:true};
+  renderCal();
+  ownChange=true;
+  const {error} = await db.from('blocked_slots').insert({date,time});
+  ownChange=false;
+  if(error){
+    delete slots[key]; renderCal();
+    toast('Fehler beim Sperren: '+error.message,'err'); return;
+  }
+  slots[key]={status:'blocked'};
+  renderCal();
+  toast('Slot gesperrt.','ok');
+}
+
+// ─── Unblock (optimistic) ────────────────────────────────────
+async function doUnblock(date,time){
+  const key=sk(date,time), prev=slots[key];
+  slots[key]={status:'free', _pending:true};
+  renderCal();
+  ownChange=true;
+  const {error} = await db.from('blocked_slots').delete().match({date,time});
+  ownChange=false;
+  if(error){
+    slots[key]=prev; renderCal();
+    toast('Fehler beim Freigeben: '+error.message,'err'); return;
+  }
+  slots[key]={status:'free'};
+  renderCal();
+  toast('Slot freigegeben.','ok');
+}
+
+// ─── Book ────────────────────────────────────────────────────
+async function doBook(){
+  const name=document.getElementById('b-name').value.trim();
+  const email=document.getElementById('b-email').value.trim();
+  const phone=document.getElementById('b-phone').value.trim();
+  if(!name){ toast('Bitte deinen Namen eingeben.','err'); return; }
+  const btn=document.getElementById('book-btn');
+  btn.innerHTML='<span class="spinner"></span>'; btn.disabled=true;
+  const {error} = await db.from('bookings').insert({
+    date:pendingBook.date, time:pendingBook.time,
+    student_name:name, student_email:email||null, student_phone:phone||null
+  });
+  btn.innerHTML='<span id="book-txt">Jetzt buchen →</span>'; btn.disabled=false;
+  if(error){
+    toast(error.code==='23505'?'Dieser Slot wurde gerade gebucht.':'Fehler: '+error.message,'err');
+    loadSlots(); return;
+  }
+  // Optimistic update for booking
+  slots[sk(pendingBook.date,pendingBook.time)]={status:'booked',student_name:name};
+  closeOv('book-ov'); pendingBook=null;
+  toast(`Gebucht! Bis bald, ${name} 🎉`,'ok');
+  renderCal();
+}
+document.getElementById('b-name').addEventListener('keydown',e=>{ if(e.key==='Enter') doBook(); });
+
+// ─── Cancel ──────────────────────────────────────────────────
+async function doCancel(){
+  const btn=document.getElementById('cancel-btn'); btn.disabled=true;
+  const {error} = await db.from('bookings').update({status:'cancelled'}).match({date:pendingCxl.date,time:pendingCxl.time});
+  btn.disabled=false;
+  if(error){ toast('Fehler: '+error.message,'err'); return; }
+  await db.from('blocked_slots').insert({date:pendingCxl.date,time:pendingCxl.time});
+  // Optimistic: mark as blocked
+  slots[sk(pendingCxl.date,pendingCxl.time)]={status:'blocked'};
+  closeOv('cancel-ov'); pendingCxl=null;
+  toast('Buchung storniert.','ok'); renderCal();
+}
+
+// ─── Week nav ────────────────────────────────────────────────
+function shiftWeek(n){ weekStart=addDays(weekStart,n); loadSlots(); }
+
+// ─── Realtime (only reload if change is from someone else) ───
+let reloadTimer=null;
+db.channel('slot-changes')
+  .on('postgres_changes',{event:'*',schema:'public',table:'blocked_slots'},()=>{
+    if(ownChange) return;
+    clearTimeout(reloadTimer); reloadTimer=setTimeout(loadSlots,400);
+  })
+  .on('postgres_changes',{event:'*',schema:'public',table:'bookings'},()=>{
+    if(ownChange) return;
+    clearTimeout(reloadTimer); reloadTimer=setTimeout(loadSlots,400);
+  })
+  .subscribe();
+
+// Close overlay on backdrop tap
+document.querySelectorAll('.overlay').forEach(ov=>{
+  ov.addEventListener('click',e=>{ if(e.target===ov) ov.classList.remove('open'); });
+});
+
+// ─── Init ────────────────────────────────────────────────────
+setView('schueler');
+initAuth().then(()=>loadSlots());
+</script>
+</body>
+</html>
