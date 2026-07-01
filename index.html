@@ -123,7 +123,14 @@ body { font-family:system-ui,-apple-system,sans-serif; background:var(--bg); col
 .overlay.open { display:flex; }
 .modal { background:var(--surface); border-radius:var(--rl) var(--rl) 0 0; padding:20px 20px 28px; width:100%; animation:sheetUp .22s ease; max-height:92vh; overflow-y:auto; }
 @keyframes sheetUp { from { transform:translateY(40px); opacity:.6; } to { transform:translateY(0); opacity:1; } }
-.modal-handle { width:36px; height:4px; background:var(--border2); border-radius:2px; margin:0 auto 16px; }
+.modal-handle {
+  display:flex; justify-content:center; align-items:center;
+  padding:10px 0 14px; margin:-20px -20px 4px;
+  cursor:grab; -webkit-tap-highlight-color:transparent; touch-action:none;
+}
+.modal-handle::after {
+  content:''; width:40px; height:4px; background:var(--border2); border-radius:2px; display:block;
+}
 .modal h2 { font-size:17px; font-weight:800; margin-bottom:3px; }
 .modal-sub { font-size:13px; color:var(--muted); margin-bottom:18px; }
 .form-lbl { font-size:12px; font-weight:700; color:var(--muted); display:block; margin-bottom:5px; }
@@ -738,9 +745,60 @@ document.querySelectorAll('.overlay').forEach(ov=>{
 let rzTimer;
 window.addEventListener('resize',()=>{ clearTimeout(rzTimer); rzTimer=setTimeout(renderCal,150); });
 
+// ── Swipe-to-close für alle Bottom-Sheet Modals ──
+function initSwipeToClose() {
+  document.querySelectorAll('.overlay').forEach(overlay => {
+    const modal = overlay.querySelector('.modal');
+    const handle = overlay.querySelector('.modal-handle');
+    if (!modal || !handle) return;
+
+    let startY = 0, lastY = 0, active = false;
+
+    handle.addEventListener('touchstart', e => {
+      startY = lastY = e.touches[0].clientY;
+      active = true;
+      modal.style.transition = 'none';
+    }, {passive: true});
+
+    handle.addEventListener('touchmove', e => {
+      if (!active) return;
+      lastY = e.touches[0].clientY;
+      const dy = Math.max(0, lastY - startY);
+      modal.style.transform = `translateY(${dy}px)`;
+      modal.style.opacity = String(Math.max(0.3, 1 - dy / 260));
+    }, {passive: true});
+
+    const onEnd = () => {
+      if (!active) return;
+      active = false;
+      const dy = Math.max(0, lastY - startY);
+      if (dy > 90) {
+        // Runterziehen: Modal weganimieren dann schließen
+        modal.style.transition = 'transform 0.22s ease, opacity 0.22s ease';
+        modal.style.transform = 'translateY(110%)';
+        modal.style.opacity = '0';
+        setTimeout(() => {
+          overlay.classList.remove('open');
+          modal.removeAttribute('style');
+        }, 220);
+      } else {
+        // Zurückschnappen
+        modal.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
+        modal.style.transform = '';
+        modal.style.opacity = '';
+        setTimeout(() => modal.style.transition = '', 200);
+      }
+    };
+
+    handle.addEventListener('touchend', onEnd);
+    handle.addEventListener('touchcancel', onEnd);
+  });
+}
+
 // ── Init ──
 setView('schueler');
 initAuth().then(()=>loadSlots());
+initSwipeToClose();
 </script>
 </body>
 </html>
