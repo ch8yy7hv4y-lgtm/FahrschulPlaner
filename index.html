@@ -659,50 +659,37 @@ async function doBook() {
   const email=document.getElementById('b-email').value.trim();
   const phone=document.getElementById('b-phone').value.trim();
   if(!name){toast('Bitte deinen Namen eingeben.','err');return;}
-
-  const duration = Number(selectedDur) || 45;
   const btn=document.getElementById('book-btn');
   btn.innerHTML='<span class="spinner"></span>'; btn.disabled=true;
-
-  // WICHTIG:
-  // Wir buchen über eine RPC-Funktion statt direkt über db.from('bookings').insert(...).
-  // Dadurch umgehen wir den PostgREST-Tabellen-Schema-Cache, der bei dir die Spalte
-  // duration_minutes noch nicht korrekt erkennt.
   const {data,error}=await db.rpc('create_booking',{
     p_date: pendingBook.date,
-    p_time: pendingBook.time,
+    p_duration_minutes: Number(selectedDur),
+    p_student_email: email || '',
     p_student_name: name,
-    p_student_email: email || null,
-    p_student_phone: phone || null,
-    p_duration_minutes: duration
+    p_student_phone: phone || '',
+    p_time: pendingBook.time
   });
-
   btn.innerHTML='<span>Jetzt buchen →</span>'; btn.disabled=false;
-
   if(error){
     toast('Fehler: '+error.message,'err');
     loadSlots(); return;
   }
-
   if(data==='slot_taken'){
     toast('Dieser Slot wurde gerade gebucht.','err');
     loadSlots(); return;
   }
-
-  if(data==='next_slot_not_free'){
-    toast('90 min nicht möglich: Der nächste Slot ist nicht frei.','err');
-    loadSlots(); return;
+  if(data==='invalid_duration'){
+    toast('Ungültige Dauer ausgewählt.','err');
+    return;
   }
-
   if(data!=='ok'){
-    toast('Fehler: '+String(data || 'unbekannt'),'err');
+    toast('Fehler: Buchung nicht gespeichert.','err');
     loadSlots(); return;
   }
-
   // Optimistic
   const key=sk(pendingBook.date,pendingBook.time);
-  slots[key]={status:'booked',student_name:name,duration_minutes:duration};
-  if(duration===90){
+  slots[key]={status:'booked',student_name:name,duration_minutes:selectedDur};
+  if(selectedDur===90){
     const ni=TIMES.indexOf(pendingBook.time)+1;
     if(ni<TIMES.length) slots[sk(pendingBook.date,TIMES[ni])]={status:'booked',student_name:name,_ext:true};
   }
