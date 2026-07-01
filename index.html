@@ -3,137 +3,164 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fahrschule – Buchung</title>
+<title>Fahrschule Müller – Buchung</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.29.0/dist/tabler-icons.min.css">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --bg:       #F0F2F7;
-  --surface:  #FFFFFF;
-  --border:   #E2E8F0;
-  --border2:  #C8D0DC;
-  --text:     #1A2332;
-  --muted:    #64748B;
-  --hint:     #94A3B8;
-  --navy:     #0D1B2A;
-  --amber:    #F59E0B;
-  --amber-bg: #FEF3C7;
-  --amber-tx: #92400E;
-  --green:    #10B981;
-  --green-bg: #D1FAE5;
-  --green-tx: #065F46;
-  --red:      #EF4444;
-  --red-bg:   #FEE2E2;
-  --red-tx:   #991B1B;
-  --blue:     #3B82F6;
-  --r:        8px;
-  --rl:       14px;
+  --bg:#F0F2F7; --surface:#FFF; --border:#E2E8F0; --border2:#C8D0DC;
+  --text:#1A2332; --muted:#64748B; --hint:#94A3B8; --navy:#0D1B2A;
+  --amber:#F59E0B; --amber-bg:#FEF3C7; --amber-tx:#92400E;
+  --green:#10B981; --green-bg:#D1FAE5; --green-tx:#065F46;
+  --red:#EF4444; --red-bg:#FEE2E2; --red-tx:#991B1B;
+  --blue:#3B82F6; --r:8px; --rl:16px;
 }
-body { font-family: system-ui,-apple-system,sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+body { font-family:system-ui,-apple-system,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
 
 /* ── Header ── */
-.hdr { background: var(--navy); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-.brand { display: flex; align-items: center; gap: 9px; }
-.brand-icon { width: 34px; height: 34px; background: var(--amber); border-radius: var(--r); display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
-.brand-name { font-size: 15px; font-weight: 700; color: #fff; }
-.brand-sub  { font-size: 10px; color: rgba(255,255,255,.45); }
-.hdr-right  { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.toggle-group { display: flex; background: rgba(255,255,255,.1); border-radius: var(--r); padding: 3px; gap: 3px; }
-.toggle-btn { padding: 6px 13px; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; background: transparent; color: rgba(255,255,255,.6); display: flex; align-items: center; gap: 5px; touch-action: manipulation; }
-.toggle-btn.active { background: var(--amber); color: var(--navy); }
-.auth-btn { padding: 7px 12px; border: 1px solid rgba(255,255,255,.22); border-radius: var(--r); background: transparent; color: rgba(255,255,255,.75); font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; white-space: nowrap; touch-action: manipulation; }
+.hdr { background:var(--navy); padding:12px 16px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+.brand { display:flex; align-items:center; gap:9px; }
+.brand-icon { width:34px; height:34px; background:var(--amber); border-radius:var(--r); display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+.brand-name { font-size:15px; font-weight:700; color:#fff; }
+.brand-sub { font-size:10px; color:rgba(255,255,255,.4); }
+.hdr-right { display:flex; align-items:center; gap:8px; }
+.toggle-group { display:flex; background:rgba(255,255,255,.1); border-radius:var(--r); padding:3px; gap:3px; }
+.toggle-btn { padding:6px 12px; border:none; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer; background:transparent; color:rgba(255,255,255,.6); display:flex; align-items:center; gap:5px; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+.toggle-btn.active { background:var(--amber); color:var(--navy); }
+.auth-btn { padding:7px 11px; border:1px solid rgba(255,255,255,.2); border-radius:var(--r); background:transparent; color:rgba(255,255,255,.75); font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:5px; touch-action:manipulation; }
 
 /* ── Info bar ── */
-.infobar { background: #0F2035; padding: 7px 16px; font-size: 12px; color: rgba(255,255,255,.5); display: flex; align-items: center; gap: 7px; }
-.infobar.lehrer { color: var(--amber); }
+.infobar { background:#0F2035; padding:7px 16px; font-size:12px; color:rgba(255,255,255,.5); display:flex; align-items:center; gap:7px; }
+.infobar.lehrer { color:var(--amber); }
 
 /* ── Week nav ── */
-.weeknav { padding: 14px 16px 8px; display: flex; align-items: center; gap: 10px; }
-.weeknav button { padding: 7px 12px; border: 1px solid var(--border); border-radius: var(--r); background: var(--surface); font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; color: var(--text); touch-action: manipulation; white-space: nowrap; }
-.weeknav button:active { background: var(--bg); }
-.week-label { flex: 1; text-align: center; font-size: 13px; font-weight: 700; }
+.weeknav { padding:12px 16px 8px; display:flex; align-items:center; gap:10px; }
+.weeknav button { padding:7px 12px; border:1px solid var(--border); border-radius:var(--r); background:var(--surface); font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:4px; color:var(--text); touch-action:manipulation; }
+.week-label { flex:1; text-align:center; font-size:13px; font-weight:700; }
 
-/* ── Calendar ── */
-.cal-outer { padding: 0 16px 16px; overflow-x: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
-.cal { display: grid; grid-template-columns: 44px repeat(6, minmax(52px, 1fr)); gap: 3px; min-width: 380px; }
-.cal-hdr { text-align: center; padding: 4px 1px 8px; }
-.day-ab { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--hint); }
-.day-ab.today { color: var(--blue); }
-.day-num { font-size: 16px; font-weight: 800; color: var(--text); line-height: 1.2; }
-.day-num.today { color: var(--blue); }
-.time-lbl { font-size: 9px; color: var(--hint); text-align: right; padding-right: 5px; padding-top: 14px; font-weight: 600; }
-.slot {
-  border-radius: var(--r); min-height: 46px; display: flex; align-items: center; justify-content: center;
-  border: 1px solid var(--border); background: var(--surface); user-select: none;
-  touch-action: manipulation; -webkit-tap-highlight-color: transparent;
-  transition: opacity .1s, transform .08s;
-}
-.slot.clickable { cursor: pointer; }
-.slot.clickable:active { opacity: .7; transform: scale(.96); }
-@media (hover: hover) { .slot.clickable:hover { opacity: .78; transform: scale(.98); } }
-.slot.free-s { background: var(--green-bg); border-color: var(--green); }
-.slot.free-l { background: var(--surface); border-color: var(--border); }
-.slot.blocked { background: var(--red-bg); border-color: var(--red); }
-.slot.booked  { background: var(--amber-bg); border-color: var(--amber); }
-.slot.optimistic { opacity: .6; }
-.slot-txt { font-size: 10px; font-weight: 700; text-align: center; padding: 0 3px; line-height: 1.3; }
-.free-s .slot-txt  { color: var(--green-tx); }
-.free-l .slot-txt  { color: var(--hint); }
-.blocked .slot-txt { color: var(--red-tx); }
-.booked  .slot-txt { color: var(--amber-tx); }
+/* ── Day tabs (mobile) ── */
+.day-tabs { display:none; overflow-x:auto; padding:0 12px 10px; gap:6px; -webkit-overflow-scrolling:touch; scrollbar-width:none; border-bottom:1px solid var(--border); }
+.day-tabs::-webkit-scrollbar { display:none; }
+.day-tab { display:flex; flex-direction:column; align-items:center; min-width:48px; padding:7px 6px; border-radius:10px; border:1px solid transparent; background:var(--surface); cursor:pointer; touch-action:manipulation; flex-shrink:0; -webkit-tap-highlight-color:transparent; }
+.tab-ab { font-size:10px; font-weight:700; color:var(--muted); text-transform:uppercase; }
+.tab-num { font-size:18px; font-weight:800; color:var(--text); line-height:1.2; margin-top:1px; }
+.tab-num.today { color:var(--blue); }
+.day-tab.active { background:var(--navy); border-color:var(--navy); }
+.day-tab.active .tab-ab { color:rgba(255,255,255,.55); }
+.day-tab.active .tab-num { color:var(--amber); }
+
+/* ── Calendar outer ── */
+.cal-outer { padding:0 16px 14px; overflow-x:auto; -webkit-overflow-scrolling:touch; overscroll-behavior-x:contain; }
+
+/* ── Desktop grid ── */
+#cal.desktop { display:grid; grid-template-columns:44px repeat(6,minmax(52px,1fr)); gap:3px; min-width:420px; }
+.cal-hdr { text-align:center; padding:4px 1px 8px; }
+.day-ab { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:var(--hint); }
+.day-ab.today { color:var(--blue); }
+.day-num { font-size:16px; font-weight:800; color:var(--text); line-height:1.2; }
+.day-num.today { color:var(--blue); }
+.time-lbl { font-size:10px; color:var(--hint); text-align:right; padding-right:5px; padding-top:14px; font-weight:600; }
+.slot { border-radius:var(--r); min-height:46px; display:flex; align-items:center; justify-content:center; border:1px solid var(--border); background:var(--surface); user-select:none; touch-action:manipulation; -webkit-tap-highlight-color:transparent; transition:opacity .12s,transform .08s; }
+.slot.clickable { cursor:pointer; }
+.slot.clickable:active { opacity:.7; transform:scale(.96); }
+@media (hover:hover) { .slot.clickable:hover { opacity:.78; } }
+.slot.free-s { background:var(--green-bg); border-color:var(--green); }
+.slot.free-l { background:var(--surface); border-color:var(--border); }
+.slot.blocked { background:var(--red-bg); border-color:var(--red); }
+.slot.booked  { background:var(--amber-bg); border-color:var(--amber); }
+.slot-txt { font-size:10px; font-weight:700; text-align:center; padding:0 3px; line-height:1.3; }
+.free-s .slot-txt { color:var(--green-tx); }
+.free-l .slot-txt { color:var(--hint); }
+.blocked .slot-txt { color:var(--red-tx); }
+.booked  .slot-txt { color:var(--amber-tx); }
+
+/* ── Mobile cards ── */
+#cal.mobile { display:flex; flex-direction:column; gap:5px; }
+.m-card { display:flex; align-items:center; padding:14px 16px; border-radius:12px; border:1.5px solid var(--border); background:var(--surface); touch-action:manipulation; -webkit-tap-highlight-color:transparent; transition:opacity .1s; min-height:64px; }
+.m-card.clickable { cursor:pointer; }
+.m-card.clickable:active { opacity:.65; }
+.m-free    { background:var(--green-bg); border-color:var(--green); }
+.m-booked  { background:var(--amber-bg); border-color:var(--amber); }
+.m-blocked { background:var(--red-bg); border-color:var(--red); }
+.m-lf      { background:var(--surface); border-color:var(--border); }
+.m-time { font-size:17px; font-weight:800; min-width:58px; color:var(--text); flex-shrink:0; }
+.m-info { flex:1; min-width:0; }
+.m-title { font-size:14px; font-weight:700; }
+.m-sub   { font-size:12px; margin-top:2px; opacity:.8; }
+.m-free    .m-title { color:var(--green-tx); }
+.m-free    .m-sub   { color:var(--green-tx); }
+.m-booked  .m-title { color:var(--amber-tx); }
+.m-booked  .m-sub   { color:var(--amber-tx); }
+.m-blocked .m-title { color:var(--red-tx); }
+.m-lf      .m-title { color:var(--muted); }
+.m-lf      .m-sub   { color:var(--hint); }
+.m-arr { font-size:16px; margin-left:8px; flex-shrink:0; }
+.m-free    .m-arr { color:var(--green); }
+.m-lf      .m-arr { color:var(--hint); }
+.m-day-hdr { font-size:14px; font-weight:700; color:var(--muted); padding:2px 0 10px; }
 
 /* ── Legend ── */
-.legend { padding: 0 16px 14px; display: flex; gap: 14px; flex-wrap: wrap; }
-.leg { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
-.leg-dot { width: 11px; height: 11px; border-radius: 3px; border: 1.5px solid; flex-shrink: 0; }
+.legend { padding:0 16px 12px; display:flex; gap:14px; flex-wrap:wrap; }
+.leg { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--muted); }
+.leg-dot { width:11px; height:11px; border-radius:3px; border:1.5px solid; flex-shrink:0; }
 
 /* ── Stats ── */
-.stats { padding: 12px 16px 24px; display: flex; gap: 8px; border-top: 1px solid var(--border); }
-.stat { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 10px 8px; text-align: center; }
-.stat-lbl { font-size: 10px; color: var(--muted); margin-bottom: 3px; }
-.stat-val { font-size: 20px; font-weight: 800; }
+.stats { padding:12px 16px 24px; display:flex; gap:8px; border-top:1px solid var(--border); }
+.stat { flex:1; background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:10px 8px; text-align:center; }
+.stat-lbl { font-size:10px; color:var(--muted); margin-bottom:3px; }
+.stat-val { font-size:20px; font-weight:800; }
 
-/* ── Toast ── */
-.toast-wrap { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 7px; z-index: 999; width: calc(100% - 32px); max-width: 340px; pointer-events: none; }
-.toast { background: var(--navy); color: #fff; padding: 10px 14px; border-radius: var(--r); font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; animation: slideUp .22s ease; box-shadow: 0 4px 16px rgba(0,0,0,.2); }
-.toast.ok  { background: #059669; }
-.toast.err { background: var(--red); }
-@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+/* ── Toasts ── */
+.toast-wrap { position:fixed; bottom:16px; left:50%; transform:translateX(-50%); display:flex; flex-direction:column; gap:7px; z-index:999; width:calc(100% - 32px); max-width:340px; pointer-events:none; }
+.toast { background:var(--navy); color:#fff; padding:10px 14px; border-radius:var(--r); font-size:13px; font-weight:600; display:flex; align-items:center; gap:8px; animation:slideUp .22s ease; box-shadow:0 4px 16px rgba(0,0,0,.2); }
+.toast.ok  { background:#059669; }
+.toast.err { background:var(--red); }
+@keyframes slideUp { from { transform:translateY(20px); opacity:0; } to { transform:translateY(0); opacity:1; } }
 
-/* ── Overlay ── */
-.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 100; align-items: flex-end; padding: 0; }
-.overlay.open { display: flex; }
-@media (min-width: 540px) { .overlay { align-items: center; padding: 16px; } .modal { border-radius: var(--rl) !important; max-width: 360px !important; } }
+/* ── Overlay + Modal ── */
+.overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:100; align-items:flex-end; }
+.overlay.open { display:flex; }
+.modal { background:var(--surface); border-radius:var(--rl) var(--rl) 0 0; padding:20px 20px 28px; width:100%; animation:sheetUp .22s ease; max-height:92vh; overflow-y:auto; }
+@keyframes sheetUp { from { transform:translateY(40px); opacity:.6; } to { transform:translateY(0); opacity:1; } }
+.modal-handle { width:36px; height:4px; background:var(--border2); border-radius:2px; margin:0 auto 16px; }
+.modal h2 { font-size:17px; font-weight:800; margin-bottom:3px; }
+.modal-sub { font-size:13px; color:var(--muted); margin-bottom:18px; }
+.form-lbl { font-size:12px; font-weight:700; color:var(--muted); display:block; margin-bottom:5px; }
+.form-inp { width:100%; padding:12px; border:1.5px solid var(--border); border-radius:var(--r); font-size:16px; outline:none; background:var(--surface); color:var(--text); -webkit-appearance:none; }
+.form-inp:focus { border-color:var(--blue); }
+.form-group { margin-bottom:12px; }
+.btn-row { display:flex; gap:8px; margin-top:18px; }
+.btn { flex:1; padding:13px 10px; border-radius:var(--r); border:1.5px solid var(--border); background:transparent; font-size:15px; font-weight:700; cursor:pointer; color:var(--text); touch-action:manipulation; }
+.btn:active { opacity:.7; }
+.btn.primary { background:var(--amber); border-color:var(--amber); color:var(--navy); flex:2; }
+.btn.danger  { background:var(--red-bg); border-color:var(--red); color:var(--red-tx); }
+.btn:disabled { opacity:.4; pointer-events:none; }
 
-/* ── Modal (bottom sheet on mobile) ── */
-.modal {
-  background: var(--surface); border-radius: var(--rl) var(--rl) 0 0;
-  padding: 20px 20px 32px; width: 100%; max-width: 100%;
-  animation: sheetUp .22s ease;
-}
-@keyframes sheetUp { from { transform: translateY(40px); opacity: .6; } to { transform: translateY(0); opacity: 1; } }
-.modal-handle { width: 36px; height: 4px; background: var(--border2); border-radius: 2px; margin: 0 auto 16px; }
-.modal h2 { font-size: 17px; font-weight: 800; margin-bottom: 3px; }
-.modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
-.form-lbl { font-size: 12px; font-weight: 700; color: var(--muted); display: block; margin-bottom: 5px; }
-.form-inp { width: 100%; padding: 11px 12px; border: 1.5px solid var(--border); border-radius: var(--r); font-size: 16px; outline: none; background: var(--surface); color: var(--text); -webkit-appearance: none; }
-.form-inp:focus { border-color: var(--blue); }
-.form-group { margin-bottom: 12px; }
-.btn-row { display: flex; gap: 8px; margin-top: 18px; }
-.btn { flex: 1; padding: 12px 10px; border-radius: var(--r); border: 1.5px solid var(--border); background: transparent; font-size: 15px; font-weight: 700; cursor: pointer; color: var(--text); touch-action: manipulation; }
-.btn:active { opacity: .7; }
-.btn.primary { background: var(--amber); border-color: var(--amber); color: var(--navy); flex: 2; }
-.btn.danger  { background: var(--red-bg); border-color: var(--red); color: var(--red-tx); }
+/* ── Duration picker ── */
+.dur-group { display:flex; gap:8px; margin-bottom:10px; }
+.dur-btn { flex:1; padding:10px 8px; border-radius:var(--r); border:1.5px solid var(--border); background:transparent; font-size:13px; font-weight:700; cursor:pointer; text-align:center; touch-action:manipulation; color:var(--text); transition:all .15s; }
+.dur-btn.active { border-color:var(--amber); background:var(--amber-bg); color:var(--amber-tx); }
+.dur-btn:disabled { opacity:.35; cursor:default; }
+.dur-warn { background:var(--red-bg); color:var(--red-tx); border-radius:var(--r); padding:8px 12px; font-size:12px; font-weight:600; margin-bottom:10px; display:none; align-items:center; gap:7px; }
+
+/* ── Late cancel notice ── */
+.late-notice { background:var(--red-bg); color:var(--red-tx); border-radius:var(--r); padding:14px; font-size:13px; font-weight:600; display:flex; gap:10px; align-items:flex-start; margin-bottom:16px; }
 
 /* ── Spinner ── */
-.spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin .65s linear infinite; vertical-align: middle; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.load-row { grid-column: 1/-1; text-align: center; padding: 40px; color: var(--hint); }
+.spinner { display:inline-block; width:16px; height:16px; border:2px solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:50%; animation:spin .65s linear infinite; vertical-align:middle; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.load-ctr { text-align:center; padding:40px; color:var(--hint); }
 
-/* ── Safe area for iPhone ── */
-@supports (padding-bottom: env(safe-area-inset-bottom)) {
-  .modal { padding-bottom: max(32px, env(safe-area-inset-bottom)); }
+/* ── iPhone safe area ── */
+@supports (padding-bottom:env(safe-area-inset-bottom)) {
+  .modal { padding-bottom:max(28px,env(safe-area-inset-bottom)); }
+}
+
+/* ── Desktop modal ── */
+@media (min-width:640px) {
+  .overlay { align-items:center; }
+  .modal { border-radius:var(--rl); max-width:400px; margin:auto; }
 }
 </style>
 </head>
@@ -162,7 +189,7 @@ body { font-family: system-ui,-apple-system,sans-serif; background: var(--bg); c
 <!-- Info bar -->
 <div class="infobar" id="infobar">
   <i class="ti ti-info-circle"></i>
-  <span id="info-txt">Grünen Slot antippen um eine Fahrstunde zu buchen.</span>
+  <span id="info-txt">Slot antippen zum Buchen. Absagen bis 24 h vorher möglich.</span>
 </div>
 
 <!-- Week nav -->
@@ -172,8 +199,11 @@ body { font-family: system-ui,-apple-system,sans-serif; background: var(--bg); c
   <button onclick="shiftWeek(7)"><i class="ti ti-arrow-right"></i></button>
 </div>
 
+<!-- Day tabs (mobile only, shown via JS) -->
+<div class="day-tabs" id="day-tabs"></div>
+
 <!-- Calendar -->
-<div class="cal-outer"><div class="cal" id="cal"></div></div>
+<div class="cal-outer"><div id="cal" class="desktop"></div></div>
 
 <!-- Legend -->
 <div class="legend" id="legend"></div>
@@ -188,7 +218,7 @@ body { font-family: system-ui,-apple-system,sans-serif; background: var(--bg); c
 <!-- Toasts -->
 <div class="toast-wrap" id="toasts"></div>
 
-<!-- Login Modal -->
+<!-- ── Login Modal ── -->
 <div class="overlay" id="login-ov">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -198,36 +228,74 @@ body { font-family: system-ui,-apple-system,sans-serif; background: var(--bg); c
     <div class="form-group"><label class="form-lbl">Passwort</label><input class="form-inp" type="password" id="l-pw" placeholder="••••••••" autocomplete="current-password"></div>
     <div class="btn-row">
       <button class="btn" onclick="closeOv('login-ov')">Abbrechen</button>
-      <button class="btn primary" id="login-btn" onclick="doLogin()"><span id="login-txt">Einloggen</span></button>
+      <button class="btn primary" id="login-btn" onclick="doLogin()"><span>Einloggen</span></button>
     </div>
   </div>
 </div>
 
-<!-- Booking Modal -->
+<!-- ── Booking Modal ── -->
 <div class="overlay" id="book-ov">
   <div class="modal">
     <div class="modal-handle"></div>
     <h2>Fahrstunde buchen</h2>
     <div class="modal-sub" id="book-date">–</div>
+    <div class="form-group">
+      <label class="form-lbl">Dauer der Fahrstunde</label>
+      <div class="dur-group">
+        <button class="dur-btn active" id="dur-45" onclick="selectDur(45)">
+          45 min<br><small style="font-weight:500;font-size:11px">Standard</small>
+        </button>
+        <button class="dur-btn" id="dur-90" onclick="selectDur(90)">
+          90 min<br><small style="font-weight:500;font-size:11px">Überlandfahrt</small>
+        </button>
+      </div>
+      <div class="dur-warn" id="dur-warn"><i class="ti ti-alert-triangle"></i> Nächster Slot belegt – 90 min nicht verfügbar.</div>
+    </div>
     <div class="form-group"><label class="form-lbl">Dein Name *</label><input class="form-inp" type="text" id="b-name" placeholder="Max Mustermann" autocomplete="name"></div>
     <div class="form-group"><label class="form-lbl">E-Mail (optional)</label><input class="form-inp" type="email" id="b-email" placeholder="max@beispiel.de" autocomplete="email"></div>
     <div class="form-group"><label class="form-lbl">Telefon (optional)</label><input class="form-inp" type="tel" id="b-phone" placeholder="0151 123 456" autocomplete="tel"></div>
     <div class="btn-row">
       <button class="btn" onclick="closeOv('book-ov')">Abbrechen</button>
-      <button class="btn primary" id="book-btn" onclick="doBook()"><span id="book-txt">Jetzt buchen →</span></button>
+      <button class="btn primary" id="book-btn" onclick="doBook()"><span>Jetzt buchen →</span></button>
     </div>
   </div>
 </div>
 
-<!-- Cancel Modal -->
-<div class="overlay" id="cancel-ov">
+<!-- ── Student Cancel Modal ── -->
+<div class="overlay" id="scancel-ov">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>Fahrstunde absagen</h2>
+    <div class="modal-sub" id="scancel-date">–</div>
+    <div id="scancel-form">
+      <div class="form-group">
+        <label class="form-lbl">Dein Name zur Bestätigung</label>
+        <input class="form-inp" type="text" id="sc-name" placeholder="Wie bei der Buchung angegeben">
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="closeOv('scancel-ov')">Zurück</button>
+        <button class="btn danger" id="sc-btn" onclick="doStudentCancel()"><i class="ti ti-x"></i> Stornieren</button>
+      </div>
+    </div>
+    <div id="scancel-late" style="display:none">
+      <div class="late-notice">
+        <i class="ti ti-clock" style="flex-shrink:0;font-size:18px;margin-top:1px"></i>
+        <span>Absage nicht mehr möglich. Fahrstunden können nur bis <strong>24 Stunden vorher</strong> storniert werden. Bitte kontaktiere den Fahrlehrer direkt.</span>
+      </div>
+      <button class="btn" onclick="closeOv('scancel-ov')">Schließen</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Teacher Cancel Modal ── -->
+<div class="overlay" id="tcancel-ov">
   <div class="modal">
     <div class="modal-handle"></div>
     <h2>Buchung verwalten</h2>
-    <div class="modal-sub" id="cancel-info">–</div>
+    <div class="modal-sub" id="tcancel-info">–</div>
     <div class="btn-row">
-      <button class="btn" onclick="closeOv('cancel-ov')">Schließen</button>
-      <button class="btn danger" id="cancel-btn" onclick="doCancel()"><i class="ti ti-trash"></i> Stornieren</button>
+      <button class="btn" onclick="closeOv('tcancel-ov')">Schließen</button>
+      <button class="btn danger" id="tc-btn" onclick="doTeacherCancel()"><i class="ti ti-trash"></i> Stornieren</button>
     </div>
   </div>
 </div>
@@ -241,143 +309,262 @@ const TIMES    = ['07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00
 const DAY_AB   = ['Mo','Di','Mi','Do','Fr','Sa'];
 const DAY_FULL = ['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
 
-let view        = 'schueler';
-let weekStart   = getMonday(new Date());
-let user        = null;
-let slots       = {};          // key → {status, student_name, _pending}
-let pendingBook = null;
-let pendingCxl  = null;
-let loadingFull = false;
-let ownChange   = false;       // flag: skip realtime reload for our own writes
+let view = 'schueler', weekStart = getMonday(new Date()), user = null;
+let slots = {}, selectedDay = initDayIdx(), selectedDur = 45;
+let pendingBook = null, pendingStudentCxl = null, pendingTeacherCxl = null;
+let loadingFull = false, ownChange = false;
 
-// ─── Helpers ───────────────────────────────────────────────
-function getMonday(d){ const r=new Date(d),d2=r.getDay(); r.setDate(r.getDate()-d2+(d2===0?-6:1)); r.setHours(0,0,0,0); return r; }
-function addDays(d,n){ const r=new Date(d); r.setDate(r.getDate()+n); return r; }
-function fmtISO(d){ return d.toISOString().split('T')[0]; }
-function fmtDE(d){ return d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'}); }
-function getKW(d){ const u=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())),dn=u.getUTCDay()||7; u.setUTCDate(u.getUTCDate()+4-dn); return Math.ceil((((u-new Date(Date.UTC(u.getUTCFullYear(),0,1)))/86400000)+1)/7); }
-function sk(date,time){ return date+'|'+time; }
+// ── Helpers ──
+function getMonday(d) { const r=new Date(d),w=r.getDay(); r.setDate(r.getDate()-w+(w===0?-6:1)); r.setHours(0,0,0,0); return r; }
+function addDays(d,n) { const r=new Date(d); r.setDate(r.getDate()+n); return r; }
+function fmtISO(d)  { return d.toISOString().split('T')[0]; }
+function fmtDE(d)   { return d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'}); }
+function fmtLong(d) { return d.toLocaleDateString('de-DE',{weekday:'long',day:'2-digit',month:'long'}); }
+function getKW(d) {
+  const u=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())),dn=u.getUTCDay()||7;
+  u.setUTCDate(u.getUTCDate()+4-dn);
+  return Math.ceil((((u-new Date(Date.UTC(u.getUTCFullYear(),0,1)))/86400000)+1)/7);
+}
+function sk(date,time) { return date+'|'+time; }
+function isMobile()    { return window.innerWidth < 640; }
+function weekDays()    { return Array.from({length:6},(_,i)=>addDays(weekStart,i)); }
 
-function toast(msg, type=''){
+function initDayIdx() {
+  const d=new Date().getDay();
+  return d===0 ? 0 : Math.min(d-1, 5);
+}
+
+function toast(msg,type='') {
   const w=document.getElementById('toasts'), t=document.createElement('div');
   t.className='toast '+type;
   t.innerHTML=`<i class="ti ti-${type==='ok'?'check':'alert-circle'}"></i> ${msg}`;
-  w.appendChild(t); setTimeout(()=>t.remove(), 3200);
+  w.appendChild(t); setTimeout(()=>t.remove(),3500);
 }
-function openOv(id){ document.getElementById(id).classList.add('open'); }
-function closeOv(id){ document.getElementById(id).classList.remove('open'); }
+function openOv(id)  { document.getElementById(id).classList.add('open'); }
+function closeOv(id) { document.getElementById(id).classList.remove('open'); }
 
-// ─── Auth ───────────────────────────────────────────────────
-async function initAuth(){
-  const {data} = await db.auth.getSession();
-  user = data?.session?.user ?? null;
-  updateAuthUI();
+// ── Auth ──
+async function initAuth() {
+  const {data}=await db.auth.getSession(); user=data?.session?.user??null; updateAuthUI();
 }
-function updateAuthUI(){
-  document.getElementById('auth-icon').className = user ? 'ti ti-logout' : 'ti ti-lock';
-  document.getElementById('auth-txt').textContent  = user ? 'Abmelden' : 'Login';
+function updateAuthUI() {
+  document.getElementById('auth-icon').className=user?'ti ti-logout':'ti ti-lock';
+  document.getElementById('auth-txt').textContent=user?'Abmelden':'Login';
 }
-function handleAuth(){ user ? doLogout() : openOv('login-ov'); }
-
-async function doLogin(){
-  const email=document.getElementById('l-email').value.trim();
-  const pw=document.getElementById('l-pw').value;
-  if(!email||!pw){ toast('Bitte E-Mail und Passwort eingeben.','err'); return; }
+function handleAuth() { user ? doLogout() : openOv('login-ov'); }
+async function doLogin() {
+  const email=document.getElementById('l-email').value.trim(), pw=document.getElementById('l-pw').value;
+  if(!email||!pw){toast('Bitte E-Mail und Passwort eingeben.','err');return;}
   const btn=document.getElementById('login-btn');
   btn.innerHTML='<span class="spinner"></span>'; btn.disabled=true;
-  const {data,error} = await db.auth.signInWithPassword({email,password:pw});
-  btn.innerHTML='<span id="login-txt">Einloggen</span>'; btn.disabled=false;
-  if(error){ toast('Login fehlgeschlagen.','err'); return; }
-  user=data.user; updateAuthUI(); closeOv('login-ov'); setView('lehrer');
-  toast('Willkommen, Fahrlehrer! 👋','ok');
+  const {data,error}=await db.auth.signInWithPassword({email,password:pw});
+  btn.innerHTML='<span>Einloggen</span>'; btn.disabled=false;
+  if(error){toast('Login fehlgeschlagen.','err');return;}
+  user=data.user; updateAuthUI(); closeOv('login-ov'); setView('lehrer'); toast('Willkommen! 👋','ok');
 }
-async function doLogout(){ await db.auth.signOut(); user=null; updateAuthUI(); setView('schueler'); toast('Abgemeldet.'); }
-document.getElementById('l-pw').addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin(); });
+async function doLogout() { await db.auth.signOut(); user=null; updateAuthUI(); setView('schueler'); toast('Abgemeldet.'); }
+document.getElementById('l-pw').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
 
-// ─── Data loading (full) ─────────────────────────────────────
-async function loadSlots(){
+// ── Data ──
+async function loadSlots() {
   loadingFull=true; renderCal();
-  const ws=fmtISO(weekStart);
-  const {data,error} = await db.rpc('get_week_status',{week_start:ws});
+  const {data,error}=await db.rpc('get_week_status',{week_start:fmtISO(weekStart)});
   loadingFull=false;
-  if(error){ toast('Ladefehler: '+error.message,'err'); renderCal(); return; }
+  if(error){toast('Ladefehler: '+error.message,'err');renderCal();return;}
   slots={};
   (data||[]).forEach(r=>{
-    const time=r.slot_time.substring(0,5);
-    slots[sk(r.slot_date,time)]={status:r.status, student_name:r.student_name};
+    const t=r.slot_time.substring(0,5);
+    slots[sk(r.slot_date,t)]={status:r.status,student_name:r.student_name,duration_minutes:r.duration_minutes};
   });
-  renderCal();
+  postProcess(); renderCal();
 }
 
-// ─── View toggle ─────────────────────────────────────────────
-function setView(v){
+function postProcess() {
+  // Mark extension slots of 90min bookings
+  Object.entries(slots).forEach(([key,info])=>{
+    if(info.status==='booked'&&info.duration_minutes===90&&!info._ext){
+      const [date,time]=key.split('|'), ni=TIMES.indexOf(time)+1;
+      if(ni<TIMES.length){
+        const nk=sk(date,TIMES[ni]);
+        if(!slots[nk]||slots[nk].status==='free')
+          slots[nk]={status:'booked',student_name:info.student_name,_ext:true};
+      }
+    }
+  });
+}
+
+// ── View ──
+function setView(v) {
   view=v;
   document.getElementById('btn-l').classList.toggle('active',v==='lehrer');
   document.getElementById('btn-s').classList.toggle('active',v==='schueler');
-  const bar=document.getElementById('infobar'), txt=document.getElementById('info-txt');
+  const bar=document.getElementById('infobar'),txt=document.getElementById('info-txt');
   if(v==='lehrer'){
     bar.className='infobar lehrer';
-    txt.textContent=user
-      ? 'Freien Slot antippen zum Sperren – gesperrten Slot nochmal zum Freigeben.'
-      : 'Melde dich an um Slots zu verwalten.';
+    txt.textContent=user?'Slot antippen zum Sperren / Freigeben.':'Bitte anmelden um Slots zu verwalten.';
   } else {
     bar.className='infobar';
-    txt.textContent='Grünen Slot antippen um eine Fahrstunde zu buchen.';
+    txt.textContent='Grünen Slot antippen zum Buchen. Absagen bis 24 h vorher möglich.';
   }
   renderCal();
 }
+function shiftWeek(n) { weekStart=addDays(weekStart,n); loadSlots(); }
 
-// ─── Render ──────────────────────────────────────────────────
-function renderCal(){
-  const today=fmtISO(new Date());
-  const days=Array.from({length:6},(_,i)=>addDays(weekStart,i));
+// ── Duration ──
+function selectDur(d) {
+  if(document.getElementById('dur-'+d).disabled) return;
+  selectedDur=d;
+  document.getElementById('dur-45').classList.toggle('active',d===45);
+  document.getElementById('dur-90').classList.toggle('active',d===90);
+}
+
+// ── Render dispatcher ──
+function renderCal() {
+  const today=fmtISO(new Date()), days=weekDays();
   document.getElementById('wlbl').textContent=
     `KW ${getKW(weekStart)} · ${fmtDE(weekStart)}–${fmtDE(addDays(weekStart,5))}`;
-  const cal=document.getElementById('cal'); cal.innerHTML='';
-
-  if(loadingFull){
-    cal.innerHTML='<div class="load-row"><i class="ti ti-loader" style="font-size:22px;color:var(--hint);animation:spin .65s linear infinite"></i></div>';
-    return;
+  if(isMobile()){
+    document.getElementById('day-tabs').style.display='flex';
+    renderDayTabs(days,today); renderMobile(days,today);
+  } else {
+    document.getElementById('day-tabs').style.display='none';
+    renderDesktop(days,today);
   }
+  renderLegend(); updateStats();
+}
 
+// ── Desktop grid ──
+function renderDesktop(days,today) {
+  const cal=document.getElementById('cal'); cal.className='desktop'; cal.innerHTML='';
+  if(loadingFull){
+    const l=document.createElement('div'); l.className='load-ctr';
+    l.innerHTML='<i class="ti ti-loader" style="font-size:22px;animation:spin .65s linear infinite"></i>';
+    cal.appendChild(l); return;
+  }
   cal.appendChild(document.createElement('div'));
   days.forEach((d,i)=>{
-    const isT=fmtISO(d)===today, h=document.createElement('div');
-    h.className='cal-hdr';
+    const isT=fmtISO(d)===today, h=document.createElement('div'); h.className='cal-hdr';
     h.innerHTML=`<div class="day-ab${isT?' today':''}">${DAY_AB[i]}</div><div class="day-num${isT?' today':''}">${d.getDate()}</div>`;
     cal.appendChild(h);
   });
-
-  let cf=0,cb=0,cg=0;
   TIMES.forEach(time=>{
     const tl=document.createElement('div'); tl.className='time-lbl'; tl.textContent=time; cal.appendChild(tl);
     days.forEach(d=>{
       const key=sk(fmtISO(d),time), info=slots[key]||{status:'free'};
       const el=document.createElement('div'); el.className='slot';
-      if(info._pending) el.classList.add('optimistic');
       let txt='';
       if(info.status==='blocked'){
-        el.classList.add('blocked'); txt=view==='lehrer'?'Gesperrt':'×'; cg++;
-        if(view==='lehrer'&&user){ el.classList.add('clickable'); el.onclick=()=>onSlot(fmtISO(d),time,info); }
+        el.classList.add('blocked'); txt=view==='lehrer'?'Gesperrt':'×';
+        if(view==='lehrer'&&user){el.classList.add('clickable');el.addEventListener('click',()=>onSlot(fmtISO(d),time,info));}
       } else if(info.status==='booked'){
-        el.classList.add('booked'); txt=view==='lehrer'?(info.student_name||'Gebucht'):'Gebucht'; cb++;
-        if(view==='lehrer'&&user){ el.classList.add('clickable'); el.onclick=()=>onSlot(fmtISO(d),time,info); }
+        el.classList.add('booked');
+        txt=info._ext?'90min':(view==='lehrer'?(info.student_name||'Gebucht'):'Gebucht');
+        if(!info._ext){
+          if(view==='lehrer'&&user){el.classList.add('clickable');el.addEventListener('click',()=>onSlot(fmtISO(d),time,info));}
+          if(view==='schueler'){el.classList.add('clickable');el.addEventListener('click',()=>onSlot(fmtISO(d),time,info));}
+        }
       } else {
-        el.classList.add(view==='schueler'?'free-s':'free-l'); txt=view==='schueler'?'Buchen':''; cf++;
-        el.classList.add('clickable'); el.onclick=()=>onSlot(fmtISO(d),time,info);
+        el.classList.add(view==='schueler'?'free-s':'free-l'); txt=view==='schueler'?'Buchen':'';
+        el.classList.add('clickable'); el.addEventListener('click',()=>onSlot(fmtISO(d),time,info));
       }
       const sp=document.createElement('span'); sp.className='slot-txt'; sp.textContent=txt;
       el.appendChild(sp); cal.appendChild(el);
     });
   });
+}
 
+// ── Day tabs ──
+function renderDayTabs(days,today) {
+  const tabs=document.getElementById('day-tabs'); tabs.innerHTML='';
+  days.forEach((d,i)=>{
+    const isT=fmtISO(d)===today, btn=document.createElement('button');
+    btn.className='day-tab'+(i===selectedDay?' active':'');
+    btn.innerHTML=`<span class="tab-ab">${DAY_AB[i]}</span><span class="tab-num${isT?' today':''}">${d.getDate()}</span>`;
+    btn.addEventListener('click',()=>{selectedDay=i;renderCal();});
+    tabs.appendChild(btn);
+  });
+}
+
+// ── Mobile single-day view ──
+function renderMobile(days,today) {
+  const cal=document.getElementById('cal'); cal.className='mobile'; cal.innerHTML='';
+  if(loadingFull){
+    const l=document.createElement('div'); l.className='load-ctr';
+    l.innerHTML='<i class="ti ti-loader" style="font-size:22px;animation:spin .65s linear infinite"></i>';
+    cal.appendChild(l); return;
+  }
+  const d=days[selectedDay];
+  const dh=document.createElement('div'); dh.className='m-day-hdr';
+  const isT=fmtISO(d)===today;
+  dh.textContent=(isT?'Heute · ':'')+fmtLong(d);
+  cal.appendChild(dh);
+  TIMES.forEach(time=>cal.appendChild(buildCard(fmtISO(d),time,slots[sk(fmtISO(d),time)]||{status:'free'})));
+}
+
+function buildCard(dateStr,time,info) {
+  const card=document.createElement('div');
+  let cls=['m-card'], title='', sub='', showArr=false, arrIcon='arrow-right', clickFn=null;
+
+  if(view==='schueler'){
+    if(info.status==='free'){
+      cls.push('m-free','clickable'); title='Fahrstunde buchen'; sub='45 oder 90 min';
+      showArr=true; clickFn=()=>onSlot(dateStr,time,info);
+    } else if(info.status==='booked'){
+      cls.push('m-booked');
+      if(info._ext){ title='↑ 90-min Fahrstunde'; sub=''; }
+      else {
+        title='Gebucht'; sub=info.duration_minutes===90?'90 min · Überlandfahrt':'45 min';
+        const h=(new Date(dateStr+'T'+time+':00')-new Date())/3600000;
+        if(h>24){ cls.push('clickable'); clickFn=()=>onSlot(dateStr,time,info); }
+      }
+    } else {
+      cls.push('m-blocked'); title='Nicht verfügbar';
+    }
+  } else {
+    if(info.status==='free'){
+      cls.push('m-lf'); title='Verfügbar';
+      if(user){ cls.push('clickable'); sub='Tippen zum Sperren'; showArr=true; arrIcon='lock'; clickFn=()=>onSlot(dateStr,time,info); }
+    } else if(info.status==='booked'){
+      cls.push('m-booked');
+      title=info._ext?'↑ 90-min Fahrt':(info.student_name||'Gebucht');
+      sub=!info._ext?(info.duration_minutes===90?'90 min · Überlandfahrt':'45 min'):'';
+      if(user&&!info._ext){ cls.push('clickable'); clickFn=()=>onSlot(dateStr,time,info); }
+    } else {
+      cls.push('m-blocked');
+      title='Gesperrt'; sub=user?'Tippen zum Freigeben':'';
+      if(user){ cls.push('clickable'); clickFn=()=>onSlot(dateStr,time,info); }
+    }
+  }
+
+  card.className=cls.join(' ');
+  const canCancel=view==='schueler'&&info.status==='booked'&&!info._ext&&
+    (new Date(dateStr+'T'+time+':00')-new Date())/3600000>24;
+
+  card.innerHTML=`
+    <div class="m-time">${time}</div>
+    <div class="m-info">
+      <div class="m-title">${title}</div>
+      ${sub?`<div class="m-sub">${sub}</div>`:''}
+    </div>
+    ${showArr?`<i class="ti ti-${arrIcon} m-arr"></i>`:''}
+    ${canCancel?'<span style="font-size:12px;font-weight:700;color:var(--red);text-decoration:underline;margin-left:8px;flex-shrink:0">Absagen</span>':''}
+  `;
+  if(clickFn) card.addEventListener('click',clickFn);
+  return card;
+}
+
+// ── Stats + Legend ──
+function updateStats() {
+  let cf=0,cb=0,cg=0;
+  weekDays().forEach(d=>TIMES.forEach(t=>{
+    const s=(slots[sk(fmtISO(d),t)]||{status:'free'}).status;
+    if(s==='free')cf++; else if(s==='booked')cb++; else cg++;
+  }));
   document.getElementById('sv').textContent=cf;
   document.getElementById('sb').textContent=cb;
   document.getElementById('sg').textContent=cg;
-  renderLegend();
 }
-
-function renderLegend(){
+function renderLegend() {
   const items=view==='lehrer'
     ?[{bg:'var(--surface)',bc:'var(--border)',l:'Verfügbar'},{bg:'var(--amber-bg)',bc:'var(--amber)',l:'Gebucht'},{bg:'var(--red-bg)',bc:'var(--red)',l:'Gesperrt'}]
     :[{bg:'var(--green-bg)',bc:'var(--green)',l:'Buchbar'},{bg:'var(--amber-bg)',bc:'var(--amber)',l:'Gebucht'},{bg:'var(--red-bg)',bc:'var(--red)',l:'Nicht verfügbar'}];
@@ -385,128 +572,173 @@ function renderLegend(){
     `<div class="leg"><div class="leg-dot" style="background:${bg};border-color:${bc}"></div><span>${l}</span></div>`).join('');
 }
 
-// ─── Slot click ──────────────────────────────────────────────
-function onSlot(dateStr, time, info){
+// ── Slot click handler ──
+function onSlot(dateStr,time,info) {
   if(view==='schueler'){
-    if(info.status!=='free') return;
-    const d=new Date(dateStr+'T00:00:00'), di=(d.getDay()||7)-1;
-    document.getElementById('book-date').textContent=`${DAY_FULL[di]}, ${fmtDE(d)} um ${time} Uhr`;
-    document.getElementById('b-name').value='';
-    document.getElementById('b-email').value='';
-    document.getElementById('b-phone').value='';
-    pendingBook={date:dateStr,time};
-    openOv('book-ov');
-    setTimeout(()=>document.getElementById('b-name').focus(),80);
-  } else if(view==='lehrer'&&user){
-    if(info.status==='booked'){
+    if(info.status==='free'){
+      // Open booking modal
       const d=new Date(dateStr+'T00:00:00'), di=(d.getDay()||7)-1;
-      document.getElementById('cancel-info').textContent=
-        `${DAY_FULL[di]}, ${fmtDE(d)} um ${time} Uhr – Schüler: ${info.student_name||'?'}`;
-      pendingCxl={date:dateStr,time};
-      openOv('cancel-ov');
+      document.getElementById('book-date').textContent=`${DAY_FULL[di]}, ${fmtDE(d)} um ${time} Uhr`;
+      document.getElementById('b-name').value='';
+      document.getElementById('b-email').value='';
+      document.getElementById('b-phone').value='';
+      selectedDur=45;
+      document.getElementById('dur-45').classList.add('active');
+      document.getElementById('dur-90').classList.remove('active');
+      // Check next slot for 90min availability
+      const ni=TIMES.indexOf(time)+1;
+      const nextBlocked=ni>=TIMES.length||((slots[sk(dateStr,TIMES[ni])]||{status:'free'}).status!=='free');
+      document.getElementById('dur-90').disabled=nextBlocked;
+      document.getElementById('dur-90').style.opacity=nextBlocked?'.35':'1';
+      document.getElementById('dur-warn').style.display=nextBlocked?'flex':'none';
+      document.getElementById('book-btn').disabled=false;
+      pendingBook={date:dateStr,time};
+      openOv('book-ov');
+      setTimeout(()=>document.getElementById('b-name').focus(),80);
+    } else if(info.status==='booked'&&!info._ext){
+      // Open cancel modal
+      const d=new Date(dateStr+'T00:00:00'), di=(d.getDay()||7)-1;
+      const h=(new Date(dateStr+'T'+time+':00')-new Date())/3600000;
+      document.getElementById('scancel-date').textContent=`${DAY_FULL[di]}, ${fmtDE(d)} um ${time} Uhr`;
+      pendingStudentCxl={date:dateStr,time,duration:info.duration_minutes||45};
+      document.getElementById('sc-name').value='';
+      if(h>24){
+        document.getElementById('scancel-form').style.display='block';
+        document.getElementById('scancel-late').style.display='none';
+      } else {
+        document.getElementById('scancel-form').style.display='none';
+        document.getElementById('scancel-late').style.display='block';
+      }
+      openOv('scancel-ov');
+    }
+  } else if(view==='lehrer'&&user){
+    if(info.status==='booked'&&!info._ext){
+      const d=new Date(dateStr+'T00:00:00'), di=(d.getDay()||7)-1;
+      document.getElementById('tcancel-info').textContent=
+        `${DAY_FULL[di]}, ${fmtDE(d)} · ${time} Uhr · ${info.student_name||'?'} · ${info.duration_minutes||45} min`;
+      pendingTeacherCxl={date:dateStr,time,duration:info.duration_minutes||45};
+      openOv('tcancel-ov');
     } else if(info.status==='blocked'){
       doUnblock(dateStr,time);
-    } else {
+    } else if(info.status==='free'){
       doBlock(dateStr,time);
     }
   }
 }
 
-// ─── Block (optimistic) ──────────────────────────────────────
-async function doBlock(date,time){
-  const key=sk(date,time);
-  // Optimistic: update local state instantly
-  slots[key]={status:'blocked', _pending:true};
-  renderCal();
-  ownChange=true;
-  const {error} = await db.from('blocked_slots').insert({date,time});
-  ownChange=false;
-  if(error){
-    delete slots[key]; renderCal();
-    toast('Fehler beim Sperren: '+error.message,'err'); return;
-  }
-  slots[key]={status:'blocked'};
-  renderCal();
-  toast('Slot gesperrt.','ok');
-}
-
-// ─── Unblock (optimistic) ────────────────────────────────────
-async function doUnblock(date,time){
+// ── Block / Unblock (optimistic) ──
+async function doBlock(date,time) {
   const key=sk(date,time), prev=slots[key];
-  slots[key]={status:'free', _pending:true};
-  renderCal();
+  slots[key]={status:'blocked',_pending:true}; renderCal();
   ownChange=true;
-  const {error} = await db.from('blocked_slots').delete().match({date,time});
+  const {error}=await db.from('blocked_slots').insert({date,time});
   ownChange=false;
-  if(error){
-    slots[key]=prev; renderCal();
-    toast('Fehler beim Freigeben: '+error.message,'err'); return;
-  }
-  slots[key]={status:'free'};
-  renderCal();
-  toast('Slot freigegeben.','ok');
+  if(error){slots[key]=prev||{status:'free'};renderCal();toast('Fehler: '+error.message,'err');return;}
+  slots[key]={status:'blocked'}; renderCal(); toast('Slot gesperrt.','ok');
+}
+async function doUnblock(date,time) {
+  const key=sk(date,time), prev=slots[key];
+  slots[key]={status:'free',_pending:true}; renderCal();
+  ownChange=true;
+  const {error}=await db.from('blocked_slots').delete().match({date,time});
+  ownChange=false;
+  if(error){slots[key]=prev;renderCal();toast('Fehler: '+error.message,'err');return;}
+  slots[key]={status:'free'}; renderCal(); toast('Slot freigegeben.','ok');
 }
 
-// ─── Book ────────────────────────────────────────────────────
-async function doBook(){
+// ── Book ──
+async function doBook() {
   const name=document.getElementById('b-name').value.trim();
   const email=document.getElementById('b-email').value.trim();
   const phone=document.getElementById('b-phone').value.trim();
-  if(!name){ toast('Bitte deinen Namen eingeben.','err'); return; }
+  if(!name){toast('Bitte deinen Namen eingeben.','err');return;}
   const btn=document.getElementById('book-btn');
   btn.innerHTML='<span class="spinner"></span>'; btn.disabled=true;
-  const {error} = await db.from('bookings').insert({
+  const {error}=await db.from('bookings').insert({
     date:pendingBook.date, time:pendingBook.time,
-    student_name:name, student_email:email||null, student_phone:phone||null
+    student_name:name, student_email:email||null,
+    student_phone:phone||null, duration_minutes:selectedDur
   });
-  btn.innerHTML='<span id="book-txt">Jetzt buchen →</span>'; btn.disabled=false;
+  btn.innerHTML='<span>Jetzt buchen →</span>'; btn.disabled=false;
   if(error){
     toast(error.code==='23505'?'Dieser Slot wurde gerade gebucht.':'Fehler: '+error.message,'err');
     loadSlots(); return;
   }
-  // Optimistic update for booking
-  slots[sk(pendingBook.date,pendingBook.time)]={status:'booked',student_name:name};
+  // Optimistic
+  const key=sk(pendingBook.date,pendingBook.time);
+  slots[key]={status:'booked',student_name:name,duration_minutes:selectedDur};
+  if(selectedDur===90){
+    const ni=TIMES.indexOf(pendingBook.time)+1;
+    if(ni<TIMES.length) slots[sk(pendingBook.date,TIMES[ni])]={status:'booked',student_name:name,_ext:true};
+  }
   closeOv('book-ov'); pendingBook=null;
-  toast(`Gebucht! Bis bald, ${name} 🎉`,'ok');
-  renderCal();
+  toast(`Gebucht! Bis bald, ${name} 🎉`,'ok'); renderCal();
 }
-document.getElementById('b-name').addEventListener('keydown',e=>{ if(e.key==='Enter') doBook(); });
+document.getElementById('b-name').addEventListener('keydown',e=>{if(e.key==='Enter')doBook();});
 
-// ─── Cancel ──────────────────────────────────────────────────
-async function doCancel(){
-  const btn=document.getElementById('cancel-btn'); btn.disabled=true;
-  const {error} = await db.from('bookings').update({status:'cancelled'}).match({date:pendingCxl.date,time:pendingCxl.time});
+// ── Student cancel ──
+async function doStudentCancel() {
+  const name=document.getElementById('sc-name').value.trim();
+  if(!name){toast('Bitte deinen Namen eingeben.','err');return;}
+  const btn=document.getElementById('sc-btn');
+  btn.innerHTML='<span class="spinner" style="border-top-color:var(--red-tx)"></span>'; btn.disabled=true;
+  const {data,error}=await db.rpc('cancel_booking',{
+    p_date:pendingStudentCxl.date, p_time:pendingStudentCxl.time, p_student_name:name
+  });
+  btn.innerHTML='<i class="ti ti-x"></i> Stornieren'; btn.disabled=false;
+  if(error){toast('Fehler: '+error.message,'err');return;}
+  if(data==='too_late'){toast('Absage nicht mehr möglich (weniger als 24h).','err');return;}
+  if(data==='not_found'){toast('Name stimmt nicht überein – bitte prüfen.','err');return;}
+  // Optimistic: free the slots
+  delete slots[sk(pendingStudentCxl.date,pendingStudentCxl.time)];
+  if(pendingStudentCxl.duration===90){
+    const ni=TIMES.indexOf(pendingStudentCxl.time)+1;
+    if(ni<TIMES.length) delete slots[sk(pendingStudentCxl.date,TIMES[ni])];
+  }
+  closeOv('scancel-ov'); pendingStudentCxl=null;
+  toast('Fahrstunde erfolgreich storniert.','ok'); renderCal();
+}
+document.getElementById('sc-name').addEventListener('keydown',e=>{if(e.key==='Enter')doStudentCancel();});
+
+// ── Teacher cancel ──
+async function doTeacherCancel() {
+  const btn=document.getElementById('tc-btn'); btn.disabled=true;
+  const {error}=await db.from('bookings').update({status:'cancelled'})
+    .match({date:pendingTeacherCxl.date,time:pendingTeacherCxl.time});
   btn.disabled=false;
-  if(error){ toast('Fehler: '+error.message,'err'); return; }
-  await db.from('blocked_slots').insert({date:pendingCxl.date,time:pendingCxl.time});
-  // Optimistic: mark as blocked
-  slots[sk(pendingCxl.date,pendingCxl.time)]={status:'blocked'};
-  closeOv('cancel-ov'); pendingCxl=null;
+  if(error){toast('Fehler: '+error.message,'err');return;}
+  // Auto-block after cancellation
+  await db.from('blocked_slots').insert({date:pendingTeacherCxl.date,time:pendingTeacherCxl.time});
+  slots[sk(pendingTeacherCxl.date,pendingTeacherCxl.time)]={status:'blocked'};
+  if(pendingTeacherCxl.duration===90){
+    const ni=TIMES.indexOf(pendingTeacherCxl.time)+1;
+    if(ni<TIMES.length) delete slots[sk(pendingTeacherCxl.date,TIMES[ni])];
+  }
+  closeOv('tcancel-ov'); pendingTeacherCxl=null;
   toast('Buchung storniert.','ok'); renderCal();
 }
 
-// ─── Week nav ────────────────────────────────────────────────
-function shiftWeek(n){ weekStart=addDays(weekStart,n); loadSlots(); }
-
-// ─── Realtime (only reload if change is from someone else) ───
+// ── Realtime ──
 let reloadTimer=null;
 db.channel('slot-changes')
   .on('postgres_changes',{event:'*',schema:'public',table:'blocked_slots'},()=>{
-    if(ownChange) return;
-    clearTimeout(reloadTimer); reloadTimer=setTimeout(loadSlots,400);
+    if(ownChange)return; clearTimeout(reloadTimer); reloadTimer=setTimeout(loadSlots,400);
   })
   .on('postgres_changes',{event:'*',schema:'public',table:'bookings'},()=>{
-    if(ownChange) return;
-    clearTimeout(reloadTimer); reloadTimer=setTimeout(loadSlots,400);
+    if(ownChange)return; clearTimeout(reloadTimer); reloadTimer=setTimeout(loadSlots,400);
   })
   .subscribe();
 
-// Close overlay on backdrop tap
+// Backdrop close
 document.querySelectorAll('.overlay').forEach(ov=>{
-  ov.addEventListener('click',e=>{ if(e.target===ov) ov.classList.remove('open'); });
+  ov.addEventListener('click',e=>{if(e.target===ov)ov.classList.remove('open');});
 });
 
-// ─── Init ────────────────────────────────────────────────────
+// Resize handler
+let rzTimer;
+window.addEventListener('resize',()=>{ clearTimeout(rzTimer); rzTimer=setTimeout(renderCal,150); });
+
+// ── Init ──
 setView('schueler');
 initAuth().then(()=>loadSlots());
 </script>
