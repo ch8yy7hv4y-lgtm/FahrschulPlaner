@@ -348,8 +348,8 @@ function toast(msg,type='') {
   t.innerHTML=`<i class="ti ti-${type==='ok'?'check':'alert-circle'}"></i> ${msg}`;
   w.appendChild(t); setTimeout(()=>t.remove(),3500);
 }
-function openOv(id)  { document.getElementById(id).classList.add('open'); }
-function closeOv(id) { document.getElementById(id).classList.remove('open'); }
+function openOv(id)  { document.getElementById(id).classList.add('open'); document.body.style.overflow='hidden'; }
+function closeOv(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow=''; }
 
 // ── Auth ──
 async function initAuth() {
@@ -777,7 +777,7 @@ db.channel('slot-changes')
 
 // Backdrop close
 document.querySelectorAll('.overlay').forEach(ov=>{
-  ov.addEventListener('click',e=>{if(e.target===ov)ov.classList.remove('open');});
+  ov.addEventListener('click',e=>{if(e.target===ov){ov.classList.remove('open');document.body.style.overflow='';}});
 });
 
 // Resize handler
@@ -819,6 +819,7 @@ function initSwipeToClose() {
         setTimeout(() => {
           overlay.classList.remove('open');
           modal.removeAttribute('style');
+          document.body.style.overflow='';
         }, 220);
       } else {
         // Zurückschnappen
