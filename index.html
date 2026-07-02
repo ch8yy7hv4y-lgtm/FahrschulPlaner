@@ -105,6 +105,12 @@ body { font-family:system-ui,-apple-system,sans-serif; background:var(--bg); col
 .leg { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--muted); }
 .leg-dot { width:11px; height:11px; border-radius:3px; border:1.5px solid; flex-shrink:0; }
 
+/* ── Buffer slot (15 min Anfahrt) ── */
+.slot.buf { background:#F8FAFC; border-color:#CBD5E1; border-style:dashed; }
+.slot.buf .slot-txt { color:var(--hint); font-size:9px; }
+.m-buf { background:#F8FAFC; border-color:#CBD5E1; border-style:dashed; }
+.m-buf .m-title { color:var(--hint); }
+
 /* ── Toasts ── */
 .toast-wrap { position:fixed; bottom:16px; left:50%; transform:translateX(-50%); display:flex; flex-direction:column; gap:7px; z-index:999; width:calc(100% - 32px); max-width:340px; pointer-events:none; }
 .toast { background:var(--navy); color:#fff; padding:10px 14px; border-radius:var(--r); font-size:13px; font-weight:600; display:flex; align-items:center; gap:8px; animation:slideUp .22s ease; box-shadow:0 4px 16px rgba(0,0,0,.2); }
@@ -170,9 +176,9 @@ body { font-family:system-ui,-apple-system,sans-serif; background:var(--bg); col
 <!-- Header -->
 <div class="hdr">
   <div class="brand">
-    <div class="brand-icon">🚗</div>
+    <div class="brand-icon" style="font-size:13px;font-weight:800;letter-spacing:-0.5px;color:var(--navy);">FS</div>
     <div>
-      <div class="brand-name">Fahrschule Müller</div>
+      <div class="brand-name">Fahrschule Sascha</div>
       <div class="brand-sub">Online-Buchung</div>
     </div>
   </div>
@@ -242,7 +248,6 @@ body { font-family:system-ui,-apple-system,sans-serif; background:var(--bg); col
       <div class="dur-warn" id="dur-warn"><i class="ti ti-alert-triangle"></i> Nächster Slot belegt – 90 min nicht verfügbar.</div>
     </div>
     <div class="form-group"><label class="form-lbl">Dein Name *</label><input class="form-inp" type="text" id="b-name" placeholder="Max Mustermann" autocomplete="name"></div>
-    <div class="form-group"><label class="form-lbl">E-Mail (optional)</label><input class="form-inp" type="email" id="b-email" placeholder="max@beispiel.de" autocomplete="email"></div>
     <div class="form-group"><label class="form-lbl">Telefon (optional)</label><input class="form-inp" type="tel" id="b-phone" placeholder="0151 123 456" autocomplete="tel"></div>
     <div class="btn-row">
       <button class="btn" onclick="closeOv('book-ov')">Abbrechen</button>
@@ -385,7 +390,7 @@ async function loadSlots() {
 }
 
 function postProcess() {
-  // Mark extension slots of 90min bookings
+  // 1. Mark extension slots of 90min bookings
   Object.entries(slots).forEach(([key,info])=>{
     if(info.status==='booked'&&info.duration_minutes===90&&!info._ext){
       const [date,time]=key.split('|'), ni=TIMES.indexOf(time)+1;
@@ -393,6 +398,19 @@ function postProcess() {
         const nk=sk(date,TIMES[ni]);
         if(!slots[nk]||slots[nk].status==='free')
           slots[nk]={status:'booked',student_name:info.student_name,_ext:true};
+      }
+    }
+  });
+  // 2. Mark 15-min buffer slot after each booking
+  Object.entries(slots).forEach(([key,info])=>{
+    if(info.status==='booked'&&!info._ext){
+      const [date,time]=key.split('|');
+      const lessonSlots=info.duration_minutes===90?2:1;
+      const bufIdx=TIMES.indexOf(time)+lessonSlots;
+      if(bufIdx<TIMES.length){
+        const bk=sk(date,TIMES[bufIdx]);
+        if(!slots[bk]||slots[bk].status==='free')
+          slots[bk]={status:'buffer',_buffer:true};
       }
     }
   });
@@ -459,6 +477,8 @@ function renderDesktop(days,today) {
       if(info.status==='blocked'){
         el.classList.add('blocked'); txt=view==='lehrer'?'Gesperrt':'×';
         if(view==='lehrer'&&user){el.classList.add('clickable');el.addEventListener('click',()=>onSlot(fmtISO(d),time,info));}
+      } else if(info.status==='buffer'){
+        el.classList.add('buf'); txt='🚗 15 min';
       } else if(info.status==='booked'){
         el.classList.add('booked');
         txt=info._ext?'90min':(view==='lehrer'?(info.student_name||'Gebucht'):'Gebucht');
@@ -513,7 +533,9 @@ function buildCard(dateStr,time,info) {
   let cls=['m-card'], title='', sub='', showArr=false, arrIcon='arrow-right', clickFn=null;
 
   if(view==='schueler'){
-    if(info.status==='free'){
+    if(info.status==='buffer'){
+      cls.push('m-buf'); title='🚗 15 min Anfahrt';
+    } else if(info.status==='free'){
       if(!isBookable(dateStr)){
         cls.push('m-blocked'); title='Nicht buchbar';
       } else {
@@ -532,7 +554,9 @@ function buildCard(dateStr,time,info) {
       cls.push('m-blocked'); title='Nicht verfügbar';
     }
   } else {
-    if(info.status==='free'){
+    if(info.status==='buffer'){
+      cls.push('m-buf'); title='🚗 15 min Anfahrt'; sub='Fahrzeit zum nächsten Schüler';
+    } else if(info.status==='free'){
       cls.push('m-lf'); title='Verfügbar';
       if(user){ cls.push('clickable'); sub='Tippen zum Sperren'; showArr=true; arrIcon='lock'; clickFn=()=>onSlot(dateStr,time,info); }
     } else if(info.status==='booked'){
@@ -650,7 +674,6 @@ async function doUnblock(date,time) {
 // ── Book ──
 async function doBook() {
   const name=document.getElementById('b-name').value.trim();
-  const email=document.getElementById('b-email').value.trim();
   const phone=document.getElementById('b-phone').value.trim();
   if(!name){toast('Bitte deinen Namen eingeben.','err');return;}
   const btn=document.getElementById('book-btn');
@@ -659,7 +682,6 @@ async function doBook() {
     date:             pendingBook.date,
     time:             pendingBook.time,
     student_name:     name,
-    student_email:    email||null,
     student_phone:    phone||null,
     duration_minutes: selectedDur
   });
