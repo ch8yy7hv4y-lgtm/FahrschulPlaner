@@ -655,53 +655,35 @@ async function doUnblock(date,time) {
 
 // ── Book ──
 async function doBook() {
-  const name=document.getElementById('b-name').value.trim();
-  const email=document.getElementById('b-email').value.trim();
-  const phone=document.getElementById('b-phone').value.trim();
-  if(!name){toast('Bitte deinen Namen eingeben.','err');return;}
+  const name  = document.getElementById('b-name').value.trim();
+  const email = document.getElementById('b-email').value.trim();
+  const phone = document.getElementById('b-phone').value.trim();
+  if (!name) { toast('Bitte deinen Namen eingeben.', 'err'); return; }
+  const btn = document.getElementById('book-btn');
+  btn.innerHTML = '<span class="spinner"></span>'; btn.disabled = true;
 
-  const btn=document.getElementById('book-btn');
-  btn.innerHTML='<span class="spinner"></span>'; btn.disabled=true;
-
-  const {data,error}=await db.rpc('create_booking_json', {
-    p: {
-      date: pendingBook.date,
-      time: pendingBook.time,
-      student_name: name,
-      student_email: email,
-      student_phone: phone,
-      duration_minutes: Number(selectedDur)
-    }
+  const { data, error } = await db.rpc('create_booking', {
+    p_date:             pendingBook.date,
+    p_time:             pendingBook.time,
+    p_student_name:     name,
+    p_student_email:    email || null,
+    p_student_phone:    phone || null,
+    p_duration_minutes: selectedDur
   });
 
-  btn.innerHTML='<span>Jetzt buchen →</span>'; btn.disabled=false;
+  btn.innerHTML = '<span>Jetzt buchen →</span>'; btn.disabled = false;
+  if (error) { toast('Fehler: ' + error.message, 'err'); loadSlots(); return; }
+  if (data === 'duplicate') { toast('Dieser Slot wurde gerade gebucht.', 'err'); loadSlots(); return; }
 
-  if(error){
-    toast('Fehler: '+error.message,'err');
-    loadSlots(); return;
+  // Optimistic update
+  const key = sk(pendingBook.date, pendingBook.time);
+  slots[key] = { status: 'booked', student_name: name, duration_minutes: selectedDur };
+  if (selectedDur === 90) {
+    const ni = TIMES.indexOf(pendingBook.time) + 1;
+    if (ni < TIMES.length) slots[sk(pendingBook.date, TIMES[ni])] = { status: 'booked', student_name: name, _ext: true };
   }
-  if(data==='slot_taken'){
-    toast('Dieser Slot wurde gerade gebucht.','err');
-    loadSlots(); return;
-  }
-  if(data==='invalid_duration'){
-    toast('Ungültige Dauer.','err');
-    return;
-  }
-  if(data!=='ok'){
-    toast('Fehler: '+String(data),'err');
-    loadSlots(); return;
-  }
-
-  // Optimistic
-  const key=sk(pendingBook.date,pendingBook.time);
-  slots[key]={status:'booked',student_name:name,duration_minutes:Number(selectedDur)};
-  if(Number(selectedDur)===90){
-    const ni=TIMES.indexOf(pendingBook.time)+1;
-    if(ni<TIMES.length) slots[sk(pendingBook.date,TIMES[ni])]={status:'booked',student_name:name,_ext:true};
-  }
-  closeOv('book-ov'); pendingBook=null;
-  toast(`Gebucht! Bis bald, ${name} 🎉`,'ok'); renderCal();
+  closeOv('book-ov'); pendingBook = null;
+  toast(`Gebucht! Bis bald, ${name} 🎉`, 'ok'); renderCal();
 }
 document.getElementById('b-name').addEventListener('keydown',e=>{if(e.key==='Enter')doBook();});
 
