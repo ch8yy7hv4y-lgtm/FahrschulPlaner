@@ -183,12 +183,8 @@ body { font-family:system-ui,-apple-system,sans-serif; background:var(--bg); col
     </div>
   </div>
   <div class="hdr-right">
-    <div class="toggle-group">
-      <button class="toggle-btn" id="btn-l" onclick="setView('lehrer')"><i class="ti ti-chalkboard"></i> Lehrer</button>
-      <button class="toggle-btn active" id="btn-s" onclick="setView('schueler')"><i class="ti ti-user"></i> Schüler</button>
-    </div>
     <button class="auth-btn" id="auth-btn" onclick="handleAuth()">
-      <i class="ti ti-lock" id="auth-icon"></i><span id="auth-txt">Login</span>
+      <i class="ti ti-lock" id="auth-icon"></i><span id="auth-txt">Lehrer-Login</span>
     </button>
   </div>
 </div>
@@ -357,11 +353,14 @@ function closeOv(id) { document.getElementById(id).classList.remove('open'); }
 
 // ── Auth ──
 async function initAuth() {
-  const {data}=await db.auth.getSession(); user=data?.session?.user??null; updateAuthUI();
+  const {data}=await db.auth.getSession();
+  user=data?.session?.user??null;
+  updateAuthUI();
+  setView(user ? 'lehrer' : 'schueler');
 }
 function updateAuthUI() {
   document.getElementById('auth-icon').className=user?'ti ti-logout':'ti ti-lock';
-  document.getElementById('auth-txt').textContent=user?'Abmelden':'Login';
+  document.getElementById('auth-txt').textContent=user?'Abmelden':'Lehrer-Login';
 }
 function handleAuth() { user ? doLogout() : openOv('login-ov'); }
 async function doLogin() {
@@ -372,9 +371,13 @@ async function doLogin() {
   const {data,error}=await db.auth.signInWithPassword({email,password:pw});
   btn.innerHTML='<span>Einloggen</span>'; btn.disabled=false;
   if(error){toast('Login fehlgeschlagen.','err');return;}
-  user=data.user; updateAuthUI(); closeOv('login-ov'); setView('lehrer'); toast('Willkommen! 👋','ok');
+  user=data.user; updateAuthUI(); closeOv('login-ov');
+  setView('lehrer'); toast('Willkommen! Du bist jetzt als Fahrlehrer eingeloggt. 👋','ok');
 }
-async function doLogout() { await db.auth.signOut(); user=null; updateAuthUI(); setView('schueler'); toast('Abgemeldet.'); }
+async function doLogout() {
+  await db.auth.signOut(); user=null; updateAuthUI();
+  setView('schueler'); toast('Abgemeldet.');
+}
 document.getElementById('l-pw').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
 
 // ── Data ──
@@ -408,12 +411,10 @@ function postProcess() {
 // ── View ──
 function setView(v) {
   view=v;
-  document.getElementById('btn-l').classList.toggle('active',v==='lehrer');
-  document.getElementById('btn-s').classList.toggle('active',v==='schueler');
   const bar=document.getElementById('infobar'),txt=document.getElementById('info-txt');
   if(v==='lehrer'){
     bar.className='infobar lehrer';
-    txt.textContent=user?'Slot antippen zum Sperren / Freigeben.':'Bitte anmelden um Slots zu verwalten.';
+    txt.textContent='Fahrlehrer-Ansicht · Slot antippen zum Sperren / Freigeben.';
   } else {
     bar.className='infobar';
     txt.textContent='Grünen Slot antippen zum Buchen. Absagen bis 24 h vorher möglich.';
@@ -834,7 +835,6 @@ function initSwipeToClose() {
 }
 
 // ── Init ──
-setView('schueler');
 initAuth().then(()=>loadSlots());
 initSwipeToClose();
 </script>
