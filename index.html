@@ -249,8 +249,8 @@ body { font-family:system-ui,-apple-system,sans-serif; background:var(--bg); col
     <div class="form-group">
       <label class="form-lbl">Dauer der Fahrstunde</label>
       <div class="dur-group">
-        <button class="dur-btn active" id="dur-45" onclick="selectDur(45)">
-          45 min<br><small style="font-weight:500;font-size:11px">Standard</small>
+        <button class="dur-btn active" id="dur-60" onclick="selectDur(60)">
+          1 Stunde<br><small style="font-weight:500;font-size:11px">Standard</small>
         </button>
         <button class="dur-btn" id="dur-90" onclick="selectDur(90)">
           90 min<br><small style="font-weight:500;font-size:11px">Überlandfahrt</small>
@@ -317,7 +317,7 @@ const DAY_AB   = ['Mo','Di','Mi','Do','Fr','Sa'];
 const DAY_FULL = ['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
 
 let view = 'schueler', weekStart = getMonday(new Date()), user = null;
-let slots = {}, selectedDay = initDayIdx(), selectedDur = 45;
+let slots = {}, selectedDay = initDayIdx(), selectedDur = 60;
 let pendingBook = null, pendingStudentCxl = null, pendingTeacherCxl = null;
 let loadingFull = false, ownChange = false;
 
@@ -335,6 +335,11 @@ function getKW(d) {
 function sk(date,time) { return date+'|'+time; }
 function isMobile()    { return window.innerWidth < 640; }
 function weekDays()    { return Array.from({length:6},(_,i)=>addDays(weekStart,i)); }
+
+// Nur Termine ab morgen sind buchbar
+function isBookable(dateStr) {
+  return dateStr > fmtISO(new Date());
+}
 
 function initDayIdx() {
   const d=new Date().getDay();
@@ -421,7 +426,7 @@ function shiftWeek(n) { weekStart=addDays(weekStart,n); loadSlots(); }
 function selectDur(d) {
   if(document.getElementById('dur-'+d).disabled) return;
   selectedDur=d;
-  document.getElementById('dur-45').classList.toggle('active',d===45);
+  document.getElementById('dur-60').classList.toggle('active',d===60);
   document.getElementById('dur-90').classList.toggle('active',d===90);
 }
 
@@ -471,8 +476,12 @@ function renderDesktop(days,today) {
           if(view==='schueler'){el.classList.add('clickable');el.addEventListener('click',()=>onSlot(fmtISO(d),time,info));}
         }
       } else {
-        el.classList.add(view==='schueler'?'free-s':'free-l'); txt=view==='schueler'?'Buchen':'';
-        el.classList.add('clickable'); el.addEventListener('click',()=>onSlot(fmtISO(d),time,info));
+        if(view==='schueler'&&!isBookable(fmtISO(d))){
+          el.classList.add('slot'); txt='';  // grau, nicht klickbar
+        } else {
+          el.classList.add(view==='schueler'?'free-s':'free-l'); txt=view==='schueler'?'Buchen':'';
+          el.classList.add('clickable'); el.addEventListener('click',()=>onSlot(fmtISO(d),time,info));
+        }
       }
       const sp=document.createElement('span'); sp.className='slot-txt'; sp.textContent=txt;
       el.appendChild(sp); cal.appendChild(el);
@@ -514,13 +523,17 @@ function buildCard(dateStr,time,info) {
 
   if(view==='schueler'){
     if(info.status==='free'){
-      cls.push('m-free','clickable'); title='Fahrstunde buchen'; sub='45 oder 90 min';
-      showArr=true; clickFn=()=>onSlot(dateStr,time,info);
+      if(!isBookable(dateStr)){
+        cls.push('m-blocked'); title='Nicht buchbar';
+      } else {
+        cls.push('m-free','clickable'); title='Fahrstunde buchen'; sub='1 Std. oder 90 min';
+        showArr=true; clickFn=()=>onSlot(dateStr,time,info);
+      }
     } else if(info.status==='booked'){
       cls.push('m-booked');
-      if(info._ext){ title='↑ 90-min Fahrstunde'; sub=''; }
+      if(info._ext){ title='↑ 90-min Fahrstunde'; }
       else {
-        title='Gebucht'; sub=info.duration_minutes===90?'90 min · Überlandfahrt':'45 min';
+        title='Gebucht'; sub=info.duration_minutes===90?'90 min · Überlandfahrt':'1 Stunde';
         const h=(new Date(dateStr+'T'+time+':00')-new Date())/3600000;
         if(h>24){ cls.push('clickable'); clickFn=()=>onSlot(dateStr,time,info); }
       }
@@ -534,7 +547,7 @@ function buildCard(dateStr,time,info) {
     } else if(info.status==='booked'){
       cls.push('m-booked');
       title=info._ext?'↑ 90-min Fahrt':(info.student_name||'Gebucht');
-      sub=!info._ext?(info.duration_minutes===90?'90 min · Überlandfahrt':'45 min'):'';
+      sub=!info._ext?(info.duration_minutes===90?'90 min · Überlandfahrt':'1 Stunde'):'';
       if(user&&!info._ext){ cls.push('clickable'); clickFn=()=>onSlot(dateStr,time,info); }
     } else {
       cls.push('m-blocked');
@@ -583,14 +596,15 @@ function renderLegend() {
 function onSlot(dateStr,time,info) {
   if(view==='schueler'){
     if(info.status==='free'){
+      if(!isBookable(dateStr)){return;} // Vergangene Tage nicht buchbar
       // Open booking modal
       const d=new Date(dateStr+'T00:00:00'), di=(d.getDay()||7)-1;
       document.getElementById('book-date').textContent=`${DAY_FULL[di]}, ${fmtDE(d)} um ${time} Uhr`;
       document.getElementById('b-name').value='';
       document.getElementById('b-email').value='';
       document.getElementById('b-phone').value='';
-      selectedDur=45;
-      document.getElementById('dur-45').classList.add('active');
+      selectedDur=60;
+      document.getElementById('dur-60').classList.add('active');
       document.getElementById('dur-90').classList.remove('active');
       // Check next slot for 90min availability
       const ni=TIMES.indexOf(time)+1;
@@ -622,7 +636,7 @@ function onSlot(dateStr,time,info) {
     if(info.status==='booked'&&!info._ext){
       const d=new Date(dateStr+'T00:00:00'), di=(d.getDay()||7)-1;
       document.getElementById('tcancel-info').textContent=
-        `${DAY_FULL[di]}, ${fmtDE(d)} · ${time} Uhr · ${info.student_name||'?'} · ${info.duration_minutes||45} min`;
+        `${DAY_FULL[di]}, ${fmtDE(d)} · ${time} Uhr · ${info.student_name||'?'} · ${info.duration_minutes===90?'90 min':'1 Stunde'}`;
       pendingTeacherCxl={date:dateStr,time,duration:info.duration_minutes||45};
       openOv('tcancel-ov');
     } else if(info.status==='blocked'){
