@@ -705,16 +705,38 @@ async function doStudentCancel() {
   if(!name){toast('Bitte deinen Namen eingeben.','err');return;}
   const btn=document.getElementById('sc-btn');
   btn.innerHTML='<span class="spinner" style="border-top-color:var(--red-tx)"></span>'; btn.disabled=true;
-  const {data,error}=await db.rpc('cancel_booking',{
-    p_date:pendingStudentCxl.date, p_time:pendingStudentCxl.time, p_student_name:name
-  });
+
+  // 1. Buchung laden und Namen prüfen
+  const {data:booking,error:fetchErr}=await db.from('bookings')
+    .select('student_name,duration_minutes')
+    .eq('date',pendingStudentCxl.date)
+    .eq('time',pendingStudentCxl.time)
+    .eq('status','confirmed')
+    .maybeSingle();
+
+  if(fetchErr||!booking){
+    btn.innerHTML='<i class="ti ti-x"></i> Stornieren'; btn.disabled=false;
+    toast('Buchung nicht gefunden.','err'); return;
+  }
+  if(booking.student_name.toLowerCase()!==name.toLowerCase()){
+    btn.innerHTML='<i class="ti ti-x"></i> Stornieren'; btn.disabled=false;
+    toast('Name stimmt nicht überein – bitte prüfen.','err'); return;
+  }
+
+  // 2. Stornieren
+  const {error}=await db.from('bookings')
+    .update({status:'cancelled'})
+    .eq('date',pendingStudentCxl.date)
+    .eq('time',pendingStudentCxl.time)
+    .eq('status','confirmed');
+
   btn.innerHTML='<i class="ti ti-x"></i> Stornieren'; btn.disabled=false;
   if(error){toast('Fehler: '+error.message,'err');return;}
-  if(data==='too_late'){toast('Absage nicht mehr möglich (weniger als 24h).','err');return;}
-  if(data==='not_found'){toast('Name stimmt nicht überein – bitte prüfen.','err');return;}
-  // Optimistic: free the slots
+
+  // 3. Optimistic update
   delete slots[sk(pendingStudentCxl.date,pendingStudentCxl.time)];
-  if(pendingStudentCxl.duration===90){
+  const dur=booking.duration_minutes||pendingStudentCxl.duration||60;
+  if(dur===90){
     const ni=TIMES.indexOf(pendingStudentCxl.time)+1;
     if(ni<TIMES.length) delete slots[sk(pendingStudentCxl.date,TIMES[ni])];
   }
