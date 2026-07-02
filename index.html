@@ -105,12 +105,6 @@ body { font-family:system-ui,-apple-system,sans-serif; background:var(--bg); col
 .leg { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--muted); }
 .leg-dot { width:11px; height:11px; border-radius:3px; border:1.5px solid; flex-shrink:0; }
 
-/* ── Stats ── */
-.stats { padding:12px 16px 24px; display:flex; gap:8px; border-top:1px solid var(--border); }
-.stat { flex:1; background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:10px 8px; text-align:center; }
-.stat-lbl { font-size:10px; color:var(--muted); margin-bottom:3px; }
-.stat-val { font-size:20px; font-weight:800; }
-
 /* ── Toasts ── */
 .toast-wrap { position:fixed; bottom:16px; left:50%; transform:translateX(-50%); display:flex; flex-direction:column; gap:7px; z-index:999; width:calc(100% - 32px); max-width:340px; pointer-events:none; }
 .toast { background:var(--navy); color:#fff; padding:10px 14px; border-radius:var(--r); font-size:13px; font-weight:600; display:flex; align-items:center; gap:8px; animation:slideUp .22s ease; box-shadow:0 4px 16px rgba(0,0,0,.2); }
@@ -210,13 +204,6 @@ body { font-family:system-ui,-apple-system,sans-serif; background:var(--bg); col
 
 <!-- Legend -->
 <div class="legend" id="legend"></div>
-
-<!-- Stats -->
-<div class="stats">
-  <div class="stat"><div class="stat-lbl">Verfügbar</div><div class="stat-val" id="sv" style="color:var(--green)">–</div></div>
-  <div class="stat"><div class="stat-lbl">Gebucht</div><div class="stat-val" id="sb" style="color:var(--amber)">–</div></div>
-  <div class="stat"><div class="stat-lbl">Gesperrt</div><div class="stat-val" id="sg" style="color:var(--red)">–</div></div>
-</div>
 
 <!-- Toasts -->
 <div class="toast-wrap" id="toasts"></div>
@@ -343,7 +330,10 @@ function initDayIdx() {
 }
 
 function toast(msg,type='') {
-  const w=document.getElementById('toasts'), t=document.createElement('div');
+  const w=document.getElementById('toasts');
+  // Vorherige Toasts sofort entfernen – kein Stapeln
+  w.innerHTML='';
+  const t=document.createElement('div');
   t.className='toast '+type;
   t.innerHTML=`<i class="ti ti-${type==='ok'?'check':'alert-circle'}"></i> ${msg}`;
   w.appendChild(t); setTimeout(()=>t.remove(),3500);
@@ -443,7 +433,7 @@ function renderCal() {
     document.getElementById('day-tabs').style.display='none';
     renderDesktop(days,today);
   }
-  renderLegend(); updateStats();
+  renderLegend();
 }
 
 // ── Desktop grid ──
@@ -574,17 +564,6 @@ function buildCard(dateStr,time,info) {
   return card;
 }
 
-// ── Stats + Legend ──
-function updateStats() {
-  let cf=0,cb=0,cg=0;
-  weekDays().forEach(d=>TIMES.forEach(t=>{
-    const s=(slots[sk(fmtISO(d),t)]||{status:'free'}).status;
-    if(s==='free')cf++; else if(s==='booked')cb++; else cg++;
-  }));
-  document.getElementById('sv').textContent=cf;
-  document.getElementById('sb').textContent=cb;
-  document.getElementById('sg').textContent=cg;
-}
 function renderLegend() {
   const items=view==='lehrer'
     ?[{bg:'var(--surface)',bc:'var(--border)',l:'Verfügbar'},{bg:'var(--amber-bg)',bc:'var(--amber)',l:'Gebucht'},{bg:'var(--red-bg)',bc:'var(--red)',l:'Gesperrt'}]
@@ -753,15 +732,15 @@ async function doTeacherCancel() {
     .match({date:pendingTeacherCxl.date,time:pendingTeacherCxl.time});
   btn.disabled=false;
   if(error){toast('Fehler: '+error.message,'err');return;}
-  // Auto-block after cancellation
-  await db.from('blocked_slots').insert({date:pendingTeacherCxl.date,time:pendingTeacherCxl.time});
-  slots[sk(pendingTeacherCxl.date,pendingTeacherCxl.time)]={status:'blocked'};
+  // Slot wieder freigeben (nicht automatisch blocken)
+  const key=sk(pendingTeacherCxl.date,pendingTeacherCxl.time);
+  slots[key]={status:'free'};
   if(pendingTeacherCxl.duration===90){
     const ni=TIMES.indexOf(pendingTeacherCxl.time)+1;
     if(ni<TIMES.length) delete slots[sk(pendingTeacherCxl.date,TIMES[ni])];
   }
   closeOv('tcancel-ov'); pendingTeacherCxl=null;
-  toast('Buchung storniert.','ok'); renderCal();
+  toast('Buchung storniert – Slot ist wieder frei.','ok'); renderCal();
 }
 
 // ── Realtime ──
