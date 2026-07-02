@@ -605,7 +605,6 @@ function onSlot(dateStr,time,info) {
       const d=new Date(dateStr+'T00:00:00'), di=(d.getDay()||7)-1;
       document.getElementById('book-date').textContent=`${DAY_FULL[di]}, ${fmtDE(d)} um ${time} Uhr`;
       document.getElementById('b-name').value='';
-      document.getElementById('b-email').value='';
       document.getElementById('b-phone').value='';
       selectedDur=60;
       document.getElementById('dur-60').classList.add('active');
